@@ -1,0 +1,141 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.subHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.subTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.addRowBtn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 7px 16px;
+  white-space: nowrap;
+}
+.addRowBtn:hover {
+  background: var(--ink-hover);
+}
+
+.emptyRows {
+  margin: 0;
+  font-size: 13px;
+  color: #6f6f62;
+  font-style: italic;
+}
+
+.cellSelect,
+.cellInput {
+  width: 100%;
+  min-width: 96px;
+  box-sizing: border-box;
+  border: none;
+  background: #f2f1e9;
+  border-radius: 9px;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 12px;
+}
+
+.cellInputError {
+  outline: 1.5px solid #c0562a;
+  background: #fdf1ea;
+}
+
+.rowDeleteBtn {
+  border: 1px solid #dcdcd0;
+  background: #ffffff;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  color: var(--ink);
+  line-height: 1;
+  font-size: 15px;
+}
+.rowDeleteBtn:hover {
+  background: #f1f0e8;
+}
+
+.derivedCell {
+  background: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px !important;
+}
+
+.derivedLabel {
+  font-size: 12px;
+  color: #5f5f54;
+  white-space: nowrap;
+}
+
+.fieldsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  color: #5f5f54;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.select,
+.textInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: #f2f1e9;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.locGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.coordGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.coordPair {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 1024px) {
+  .fieldsGrid,
+  .locGrid,
+  .coordGrid {
+    grid-template-columns: 1fr;
+  }
+}

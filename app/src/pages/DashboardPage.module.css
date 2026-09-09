@@ -1,0 +1,538 @@
+.hero {
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+  height: 320px;
+  margin: 6px 0 0;
+  background: #8d8d8d;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.heroShade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(20, 20, 15, 0) 35%, rgba(20, 20, 15, 0.65) 100%);
+}
+
+.heroLoc {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 8px 14px 8px 10px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.heroLocText {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.heroThumbs {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+}
+
+.heroThumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  overflow: hidden;
+  border: 2px solid #ffffff;
+  margin-left: -10px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+.heroThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.heroThumbMore {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--ink);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  margin-left: -10px;
+  border: 2px solid #ffffff;
+}
+
+.heroText {
+  position: absolute;
+  left: 26px;
+  bottom: 56px;
+  right: 26px;
+  color: #ffffff;
+}
+
+.heroTitle {
+  margin: 0;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.heroDesc {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  max-width: 560px;
+  opacity: 0.85;
+}
+
+.dateRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  margin: 26px 0 18px;
+}
+
+.dateText {
+  font-size: 14px;
+  color: #5f5f54;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 22px;
+  align-items: start;
+}
+
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-width: 0;
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: 0 6px 20px rgba(20, 20, 15, 0.06);
+}
+
+.statTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.statBadge {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.statTrend {
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.statK {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.statBottom {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.statV {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.statSub {
+  font-size: 12px;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.mutedSmall {
+  font-size: 13px;
+  color: #5f5f54;
+}
+
+.storageHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.quotaBar {
+  margin: 12px 0 18px;
+}
+
+.storageList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.storageRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.storageDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+
+.storageLabel {
+  font-size: 14px;
+  flex: 1;
+}
+
+.storageBarTrack {
+  width: 180px;
+}
+
+.storageMeta {
+  font-size: 13px;
+  color: #5f5f54;
+  width: 90px;
+  text-align: right;
+}
+
+.recentHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.recentControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.recentTabs {
+  display: inline-flex;
+  gap: 2px;
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.recentTab {
+  border: none;
+  font: inherit;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 999px;
+}
+
+.recentLink {
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.recentRow {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid #e7e7dc;
+  font-size: 14px;
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+.recentRow:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+.recentRow:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 2px;
+}
+.recentRow:last-child {
+  border-bottom: none;
+}
+
+.recentTime {
+  color: #5f5f54;
+  width: 110px;
+  flex: none;
+  font-size: 13px;
+}
+
+.recentUser {
+  white-space: nowrap;
+}
+
+.recentAction {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.recentTarget {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assistant {
+  background: linear-gradient(155deg, var(--accent-soft), var(--accent));
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 10px 26px rgba(20, 20, 15, 0.1);
+}
+
+.assistantHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.assistantIcon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ink);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.assistantLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.assistantExpand {
+  margin-left: auto;
+  border: none;
+  background: rgba(20, 20, 15, 0.08);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.assistantMsg {
+  margin: 0 0 16px;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.assistantActions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.assistantChip {
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--ink);
+}
+
+.assistantInputRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  padding: 6px 6px 6px 16px;
+}
+
+.assistantInputPlaceholder {
+  flex: 1;
+  font-size: 13px;
+  color: #5c5c50;
+}
+
+.assistantSend {
+  border: none;
+  background: var(--ink);
+  color: var(--accent);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.pipeline {
+  background: color-mix(in srgb, var(--ink) 62%, transparent);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  color: #ffffff;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 6px 20px rgba(20, 20, 15, 0.15);
+}
+
+.pipelineTitle {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.pipelineRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 14px;
+  cursor: pointer;
+}
+.pipelineRow:hover {
+  opacity: 0.75;
+}
+.pipelineRow:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+.pipelineRow:last-child {
+  border-bottom: none;
+}
+
+.pipelineNum {
+  opacity: 0.55;
+  font-size: 12px;
+  width: 14px;
+}
+
+.pipelineLabel {
+  flex: 1;
+}
+
+.pipelineChip {
+  font-weight: 700;
+  font-size: 13px;
+  padding: 3px 12px;
+  border-radius: 999px;
+}
+
+/* A8 responsive — the 4-col stat grid and the 1fr/320px main grid were rigid
+   (redteam.md mục a): they now step down instead of overflowing/clipping on a
+   1280px or 1024px screen. */
+@media (max-width: 1280px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rightCol {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .assistant,
+  .pipeline {
+    flex: 1 1 320px;
+    min-width: 280px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .hero {
+    height: 220px;
+  }
+  .heroTitle {
+    font-size: 28px;
+  }
+  .heroText {
+    left: 18px;
+    right: 18px;
+    bottom: 40px;
+  }
+  .heroDesc {
+    max-width: none;
+  }
+  .statsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rightCol {
+    flex-direction: column;
+  }
+  .assistant,
+  .pipeline {
+    min-width: 0;
+  }
+  .storageBarTrack {
+    width: auto;
+    flex: 1;
+  }
+}

@@ -1,0 +1,297 @@
+.page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+.cardWrap {
+  width: 100%;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.card {
+  width: 100%;
+}
+
+.cardInner {
+  padding: 34px 32px 30px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.brandMark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  flex: none;
+}
+
+.brandTitle {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.brandSub {
+  font-size: 12px;
+  color: #5f5f54;
+  margin-top: 2px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3c3c34;
+  margin: 0 0 6px;
+  display: block;
+}
+
+.reqMark {
+  color: #c0562a;
+  font-weight: 700;
+  margin-left: 3px;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #e2e1d6;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 14px;
+  color: #1a1a1a;
+}
+.input:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+.input::placeholder {
+  color: #9a9a8c;
+}
+
+.textArea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #e2e1d6;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 14px;
+  color: #1a1a1a;
+  min-height: 84px;
+  resize: vertical;
+}
+.textArea:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+.textArea::placeholder {
+  color: #9a9a8c;
+}
+
+.chipRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.fieldError {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9a4a1f;
+  margin-top: 6px;
+}
+
+.pdplNote {
+  background: #f2f1e9;
+  border-radius: 14px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pdplTitle {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.pdplRow {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #3c3c34;
+  line-height: 1.55;
+}
+
+.pdplKey {
+  font-weight: 700;
+  color: #5f5f54;
+  flex: none;
+}
+
+.consentRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12.5px;
+  color: #3c3c34;
+  line-height: 1.5;
+  margin-top: 4px;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  margin-top: 1px;
+  accent-color: var(--ink);
+}
+
+.submitBtn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 12px 20px;
+  width: 100%;
+}
+.submitBtn:hover {
+  background: var(--ink-hover);
+}
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loginHint {
+  text-align: center;
+  font-size: 13px;
+  color: #5f5f54;
+  margin: 2px 0 0;
+}
+
+.link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.submitted {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.submittedIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
+}
+
+.stepTitle {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.stepDesc {
+  font-size: 13.5px;
+  color: #3c3c34;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.submittedList {
+  margin: 6px 0 8px;
+  padding-left: 20px;
+  font-size: 13px;
+  color: #5f5f54;
+  line-height: 1.7;
+}
+
+.footer {
+  text-align: center;
+  color: var(--ink);
+  opacity: 0.72;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.footer p {
+  margin: 0;
+}
+
+@media (max-width: 1280px) {
+  .cardWrap {
+    max-width: 560px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .page {
+    padding: 22px 14px;
+    align-items: flex-start;
+  }
+  .cardWrap {
+    max-width: 100%;
+  }
+  .cardInner {
+    padding: 26px 20px 24px;
+  }
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+  .pdplRow {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}

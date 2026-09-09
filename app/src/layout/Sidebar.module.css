@@ -1,0 +1,621 @@
+.sidebar {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.28);
+  backdrop-filter: blur(26px) saturate(160%);
+  -webkit-backdrop-filter: blur(26px) saturate(160%);
+  border-right: 1px solid rgba(255, 255, 255, 0.5);
+  /* Một đường cong và một nhịp DUY NHẤT cho mọi thứ chuyển động khi đóng/mở:
+     bề rộng khung, chiều cao hàng tiêu đề nhóm, độ mờ của nhãn. Trước đây bề
+     rộng trượt 180ms còn nhãn và tiêu đề nhóm bị tháo khỏi DOM tức thì — đo
+     được mục cuối nhảy 124px ngay khung hình đầu, nên dù bề rộng có mượt thì
+     mắt vẫn thấy giật. Đồng bộ nhịp quan trọng hơn là làm nhịp thật nhanh. */
+  transition: width var(--sb-dur) var(--sb-ease);
+  overflow: hidden;
+}
+
+.sidebar {
+  --sb-dur: 0.24s;
+  --sb-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Nhãn chữ: mờ dần thay vì biến mất đột ngột. Khi MỞ thì chờ khung đủ rộng rồi
+   mới hiện chữ (delay), khi ĐÓNG thì chữ tắt trước để không bị cắt ngang giữa
+   chừng — đây là điều làm chuyển động "đọc" ra tự nhiên. */
+.brandName,
+.navLabel,
+.navBadge,
+.settingsLabel,
+.userMeta {
+  transition: opacity var(--sb-dur) var(--sb-ease);
+}
+.sidebarOpen .brandName,
+.sidebarOpen .navLabel,
+.sidebarOpen .navBadge,
+.sidebarOpen .settingsLabel,
+.sidebarOpen .userMeta {
+  opacity: 1;
+  transition-delay: 0.06s;
+  transition-duration: 0.18s;
+}
+.sidebarCollapsed .brandName,
+.sidebarCollapsed .navLabel,
+.sidebarCollapsed .navBadge,
+.sidebarCollapsed .settingsLabel,
+.sidebarCollapsed .userMeta {
+  opacity: 0;
+  pointer-events: none;
+  transition-duration: 0.1s;
+}
+
+/* Hàng tiêu đề nhóm: co chiều cao về 0 thay vì tháo khỏi DOM. Dùng grid
+   0fr↔1fr để khỏi phải ghi cứng chiều cao — nhãn nhóm đổi tên được nên chiều
+   cao không cố định vĩnh viễn. */
+.sidebarCollapsed .sectionRow {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin-top: 0;
+}
+.sidebarCollapsed .navGroup + .navGroup {
+  margin-top: 10px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 18px 18px;
+}
+
+.brandMark {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--ink);
+  flex: none;
+  display: grid;
+  place-items: center;
+}
+
+.brandName {
+  font-weight: 800;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Nhãn nhóm phải TÁCH KHỎI mục menu bằng cả ba tín hiệu: cỡ/đậm hơn trước đây,
+   màu khác hẳn màu chữ mục (#5f5f54), và divider ở cấp .navGroup. Bản cũ chỉ có
+   đúng một tín hiệu là chữ hoa 10px — nhìn lướt không phân biệt được nhóm. */
+/* Hàng tiêu đề nhóm — cùng cơ chế hover như hàng menu (xem .navRow) để nhóm
+   cũng đổi tên/ẩn được. Padding chuyển từ .sectionLabel lên hàng bao, nếu không
+   vùng hover sẽ lệch khỏi vùng chữ. */
+.sectionRow {
+  position: relative;
+  border-radius: 10px;
+  /* grid 1fr → 0fr là cách co chiều cao có thể animate được mà không cần biết
+     trước chiều cao thật; con trực tiếp phải overflow:hidden + min-height:0. */
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transition: grid-template-rows var(--sb-dur) var(--sb-ease), opacity var(--sb-dur) var(--sb-ease);
+}
+.sectionRow > * {
+  overflow: hidden;
+  min-height: 0;
+}
+.sectionRow:hover {
+  background: #f1f0e8;
+}
+.sectionRowEditing {
+  background: #f1f0e8;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px 7px;
+}
+
+/* Cả dòng tiêu đề là nút gập/mở — vùng bấm rộng bằng nhãn, không bắt người dùng
+   nhắm vào mỗi mũi tên 11px. */
+.sectionToggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 10px 12px 7px;
+  border-radius: 10px;
+  color: var(--accent-text);
+}
+.sectionToggle:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: -2px;
+}
+/* Chừa chỗ cho hai nút, nhãn dài cắt bằng … thay vì chui xuống dưới nút. */
+.sectionRow:hover .sectionToggle,
+.sectionRow:focus-within .sectionToggle {
+  padding-right: 56px;
+}
+
+.sectionChevron {
+  flex: none;
+  transform: rotate(0deg);
+  transition: transform 0.15s ease;
+}
+.sectionChevronOpen {
+  transform: rotate(90deg);
+}
+
+.sectionLabel {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Số mục đang gập — để nhóm gọn lại vẫn cho biết bên trong còn bao nhiêu. */
+.sectionCount {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+/* Rê chuột thì nhường chỗ cho cụm nút sửa tên/ẩn. */
+.sectionRow:hover .sectionCount,
+.sectionRow:focus-within .sectionCount {
+  display: none;
+}
+
+/* Divider giữa các nhóm — nằm ở cấp nhóm chứ không ở nhãn, nên vẫn hiển thị khi
+   sidebar thu gọn (nhãn ẩn, icon còn): ranh giới nhóm không biến mất. */
+.navGroup + .navGroup {
+  margin-top: 12px;
+  padding-top: 6px;
+  border-top: 1px solid #e2e1d4;
+}
+
+/* Hàng menu = <div> bao ngoài + <a> điều hướng + cụm nút hành động.
+   Nền/hover/trạng thái đang chọn nằm ở hàng bao chứ không ở thẻ <a>, để nút sửa
+   tên và ẩn cũng nằm trong vùng sáng. Nút KHÔNG được lồng trong <a> (HTML không
+   hợp lệ, và bấm nút sẽ kích hoạt luôn điều hướng). */
+.navRow {
+  position: relative;
+  border-radius: 12px;
+}
+.navRow:hover {
+  background: #f1f0e8;
+}
+.navRowActive,
+.navRowActive:hover {
+  background: var(--accent-soft);
+}
+.navRowActive .navItem {
+  color: var(--accent-text);
+  font-weight: 700;
+}
+.navRowEditing {
+  background: #f1f0e8;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: #5f5f54;
+  padding: 10px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.navItem:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 2px;
+}
+/* Chừa chỗ cho cụm nút khi rê chuột: nhãn dài bị cắt bằng dấu … thay vì chui
+   xuống dưới hai nút. Chỉ đổi padding nên icon và điểm bắt đầu chữ không nhảy. */
+.navRow:hover .navItem,
+.navRow:focus-within .navItem {
+  padding-right: 60px;
+}
+
+.navIcon {
+  flex: none;
+}
+
+.navLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Cụm nút sửa tên / ẩn — phủ lên vị trí badge, nên badge tạm ẩn khi rê chuột.
+   `:focus-within` để người dùng bàn phím Tab tới cũng thấy, không chỉ chuột. */
+.navActions {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: none;
+  align-items: center;
+  gap: 2px;
+}
+.navRow:hover .navActions,
+.navRow:focus-within .navActions,
+.sectionRow:hover .navActions,
+.sectionRow:focus-within .navActions {
+  display: flex;
+}
+/* Trong hàng tiêu đề nhóm, cụm nút canh theo vùng chữ (padding-top 10px) chứ
+   không canh giữa cả hàng — hàng này cao lệch vì có padding trên/dưới khác nhau. */
+.sectionRow .navActions {
+  top: 9px;
+  transform: none;
+}
+.navRow:hover .navBadge,
+.navRow:focus-within .navBadge {
+  visibility: hidden;
+}
+
+.navActionBtn {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  border-radius: 7px;
+  color: #6f6f62;
+  cursor: pointer;
+  padding: 0;
+}
+.navActionBtn:hover {
+  background: #ffffff;
+  color: var(--accent-text);
+}
+.navActionBtn:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 1px;
+}
+
+.renameInput {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 14px;
+  border: 1.5px solid var(--accent-text);
+  border-radius: 8px;
+  padding: 2px 8px;
+  background: #ffffff;
+  color: var(--ink);
+}
+.renameInput:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 1px;
+}
+
+.navBadge {
+  background: var(--ink);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+
+/* Khối "Tuỳ chỉnh menu" — lối duy nhất để lấy lại mục đã ẩn, nên phải luôn tìm
+   thấy được khi có mục bị ẩn. Đặt cuối danh sách menu, tách bằng divider. */
+.customBlock {
+  margin-top: 14px;
+  padding-top: 8px;
+  border-top: 1px dashed #d8d7c6;
+}
+
+.customToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: left;
+  color: #6f6f62;
+  padding: 8px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.customToggle:hover {
+  background: #f1f0e8;
+  color: var(--accent-text);
+}
+.customToggle:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 2px;
+}
+
+.customToggleLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customCount {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.customBody {
+  padding: 2px 4px 6px;
+}
+
+.hiddenList {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hiddenRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+}
+.hiddenRow:hover {
+  background: #f1f0e8;
+}
+
+.hiddenLabel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: #5f5f54;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Nhãn "cả nhóm": phân biệt dòng khôi phục NHÓM với dòng khôi phục MỘT MỤC —
+   hai thứ này cùng danh sách, cùng nút "Hiện lại", nhưng hệ quả khác hẳn nhau. */
+.hiddenKind {
+  flex: none;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+
+.hiddenRestore {
+  flex: none;
+  border: 1px solid #dcdcd0;
+  background: #ffffff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 2px 9px;
+  cursor: pointer;
+}
+.hiddenRestore:hover {
+  border-color: var(--accent-text);
+  color: var(--accent-text);
+}
+.hiddenRestore:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 1px;
+}
+
+.customNote {
+  margin: 0 0 6px;
+  padding: 0 8px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #8a8a7b;
+}
+
+.customReset {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-align: left;
+  color: #8a8a7b;
+  padding: 5px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.customReset:hover {
+  color: var(--accent-text);
+  background: #f1f0e8;
+}
+.customReset:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 1px;
+}
+
+.footer {
+  padding: 10px 12px 12px;
+  border-top: 1px solid #e7e7dc;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Dòng "Cài đặt" — trông và hành xử như một mục menu, nằm trên thẻ người dùng. */
+.settingsRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: #5f5f54;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.settingsRow:hover {
+  background: #f1f0e8;
+}
+.settingsRow:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 2px;
+}
+
+/* Thẻ người dùng: avatar · (tên đậm / chức danh) · icon đăng xuất sát lề phải. */
+.userCard {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 12px;
+}
+
+/* Thu gọn (72px): xếp dọc avatar trên, bánh răng dưới — hàng ngang không đủ chỗ. */
+.userCardCollapsed {
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Hình tròn thật + viền màu nhấn: trên nền kính mờ, khối accent-soft không viền
+   bị chìm — viền là thứ làm avatar đọc ra "đây là người đang đăng nhập". */
+.avatar {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  border: 1.5px solid var(--accent-text);
+  color: var(--accent-text);
+  font-weight: 800;
+  font-size: 12.5px;
+  display: grid;
+  place-items: center;
+}
+
+.userMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+
+.userName {
+  font-size: 13px;
+  font-weight: 700;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chức danh/vai trò — dòng phụ ngay dưới tên, chữ thường không pill. */
+.userTitle {
+  font-size: 11.5px;
+  color: #5f5f54;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Icon đăng xuất — vuông nhỏ sát lề phải, cùng hàng với tên. */
+.logoutBtn {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  color: #5f5f54;
+  cursor: pointer;
+}
+.logoutBtn:hover {
+  background: #f1f0e8;
+  color: var(--accent-text);
+}
+.logoutBtn:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: 2px;
+}
+
+/* A8 responsive — sidebar collapses to icon-only past 1024px regardless of the
+   open/closed toggle state (labels stay in the DOM for the open state but are
+   visually hidden here; icons + click targets remain fully usable). */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 72px !important;
+  }
+  .brandName,
+  .sectionLabel,
+  .navLabel,
+  .navBadge,
+  .settingsLabel,
+  .userMeta {
+    display: none;
+  }
+  /* Ở bề rộng ép 72px, hàng footer cũng phải xếp dọc như trạng thái thu gọn chủ động. */
+  .userCard {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

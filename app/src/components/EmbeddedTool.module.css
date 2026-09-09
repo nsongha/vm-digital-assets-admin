@@ -1,0 +1,151 @@
+/* Chiều cao trừ theo layout shell: .outer padding 22px*2 + Header + .content
+   padding dưới — xem ghi chú trong AppShell.module.css. Cố định để iframe
+   chiếm gần hết màn hình mà không tạo scroll kép (shell đã overflow:auto). */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: calc(100vh - 190px);
+  min-height: 520px;
+}
+
+.description {
+  margin: 0;
+  font-size: 13px;
+  color: #5f5f54;
+  line-height: 1.55;
+  max-width: 90ch;
+}
+
+.checkingRow {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #5f5f54;
+}
+
+/* Trạng thái "up" — thanh mỏng + iframe chiếm phần còn lại */
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.barTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.openLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1.5px solid #dcdcd0;
+  border-radius: 999px;
+  padding: 7px 16px;
+  background: #ffffff;
+  white-space: nowrap;
+}
+.openLink:hover {
+  background: #f3f3ec;
+}
+
+.iframe {
+  flex: 1;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  /* Nền tối để lúc iframe đang tải (trước khi PlayCanvas vẽ khung đầu tiên)
+     không lóe trắng giữa giao diện admin theo tông nền kính mờ. */
+  background: #14140f;
+}
+
+/* Trạng thái "down" — panel hướng dẫn khởi động app ngoài */
+
+.downCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 40px 32px;
+}
+
+.downText {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.6;
+}
+
+.inlineCode {
+  font-family: ui-monospace, monospace;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.commandRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+}
+
+.commandCode {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  padding: 10px 14px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  text-align: left;
+}
+
+.copyBtn {
+  flex: none;
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+.copyBtn:hover {
+  background: #f3f3ec;
+}
+
+.downActions {
+  display: flex;
+  gap: 10px;
+}
+
+.retryBtn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 10px 22px;
+}
+.retryBtn:hover {
+  background: var(--ink-hover);
+}

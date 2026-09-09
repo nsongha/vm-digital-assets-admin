@@ -1,0 +1,323 @@
+.backLink {
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.headRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 14px 0 18px;
+  flex-wrap: wrap;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  font-weight: 800;
+  flex: none;
+}
+
+.headTitleWrap {
+  flex: 1;
+  min-width: 240px;
+}
+
+.headTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.headMeta {
+  font-size: 13.5px;
+  color: #5f5f54;
+  margin-top: 2px;
+}
+
+.badgeRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.metaCell {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 14px;
+}
+
+.metaKey {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6f6f62;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.btnRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.secondaryBtn {
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 9px 16px;
+}
+.secondaryBtn:hover {
+  background: #f3f3ec;
+}
+.secondaryBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.dangerLink {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #c0392b;
+  padding: 9px 10px;
+  margin-left: auto;
+}
+.dangerLink:hover {
+  text-decoration: underline;
+}
+
+.inlineNote {
+  font-size: 13px;
+  color: var(--accent-text);
+  background: var(--accent-soft);
+  border-radius: 10px;
+  padding: 8px 14px;
+  margin: 10px 0 0;
+  display: inline-block;
+}
+
+.sectionTitle {
+  margin: 22px 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.matrixScroll {
+  overflow-x: auto;
+}
+
+.checkbox {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+
+.scopeGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scopeGroupLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #5f5f54;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.chipWrap {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.emptyScope {
+  font-size: 13px;
+  color: #c0562a;
+  margin: 14px 0 0;
+}
+
+.deleteTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: #c0392b;
+}
+
+.deleteInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #dcdcd0;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.deleteFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 18px;
+  margin-top: 16px;
+  border-top: 1px solid #e7e7dc;
+}
+
+.dangerBtn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: #c0392b;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 9px 20px;
+}
+.dangerBtn:hover {
+  background: #a3301f;
+}
+.dangerBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sectionMeta {
+  font-size: 12.5px;
+  color: #5f5f54;
+}
+
+.sectionNote {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #5f5f54;
+  line-height: 1.55;
+  max-width: 90ch;
+}
+
+.violationBox {
+  margin-top: 16px;
+  background: #ffe6d8;
+  border: 1.5px solid #e0a98a;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #7a3413;
+  line-height: 1.6;
+}
+
+.violationList {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+
+/* Thanh lưu phân quyền — dính đáy màn hình để không bị trôi khỏi tầm mắt khi
+   người dùng cuộn xuống chỉnh phạm vi dữ liệu ở cuối trang. */
+.saveBar {
+  position: sticky;
+  bottom: 14px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #faf9f4;
+  border: 1.5px solid #dcdcd0;
+  box-shadow: 0 10px 28px rgba(20, 20, 15, 0.14);
+}
+
+.saveBarText {
+  flex: 1 1 auto;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.primaryBtn {
+  border: 1.5px solid var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 9px 20px;
+}
+.primaryBtn:hover {
+  opacity: 0.9;
+}
+.primaryBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.reasonInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #dcdcd0;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  color: var(--ink);
+}
+
+@media (max-width: 1280px) {
+  .metaGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+  .dangerLink {
+    margin-left: 0;
+  }
+}

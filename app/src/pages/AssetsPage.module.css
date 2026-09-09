@@ -1,0 +1,69 @@
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 6px 0 18px;
+  flex-wrap: wrap;
+}
+
+.count {
+  font-size: 14px;
+  color: #5f5f54;
+}
+
+.uploadBtn {
+  margin-left: auto;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 10px 20px;
+}
+.uploadBtn:hover {
+  background: var(--ink-hover);
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.statusChip {
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+
+.empty {
+  color: #5f5f54;
+  font-size: 14px;
+  padding: 14px 8px;
+}
+
+.pagerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 8px;
+  flex-wrap: wrap;
+}
+
+.pagerLabel {
+  font-size: 13px;
+  color: #5f5f54;
+}

@@ -1,0 +1,254 @@
+.statStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 6px 0 20px;
+}
+
+.statTile {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 6px 20px rgba(20, 20, 15, 0.06);
+}
+
+.statWarn {
+  background: #fbeae6;
+  border-color: rgba(138, 39, 26, 0.15);
+}
+
+.statUrgent {
+  position: relative;
+  border-width: 1.5px;
+  border-color: #8a271a;
+  box-shadow: 0 6px 20px rgba(138, 39, 26, 0.14);
+}
+
+.statQueueBadge {
+  align-self: flex-start;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: #8a271a;
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.statHint {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #8a271a;
+  line-height: 1.35;
+}
+
+.statV {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.statPct {
+  font-size: 14px;
+  font-weight: 700;
+  opacity: 0.7;
+}
+
+.statK {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #5f5f54;
+}
+
+.statWarn .statK {
+  color: #8a271a;
+}
+
+@media (max-width: 1280px) {
+  .statStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.tree {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  padding: 10px;
+  position: sticky;
+  top: 16px;
+}
+
+.treeNode {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.treeNode:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.treeNodeChild {
+  padding-left: 20px;
+  font-weight: 600;
+  font-size: 12.5px;
+  color: #3c3c34;
+}
+
+.treeNodeActive {
+  background: var(--ink) !important;
+  color: #ffffff !important;
+}
+
+.treeCount {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: inherit;
+  opacity: 0.7;
+  flex: none;
+}
+
+.main {
+  min-width: 0;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.count {
+  font-size: 14px;
+  color: #5f5f54;
+}
+
+.searchWrap {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  font: inherit;
+  font-size: 13.5px;
+  border: 1.5px solid #dcdcd0;
+  border-radius: 999px;
+  padding: 8px 16px;
+  min-width: 240px;
+  background: #ffffff;
+  color: var(--ink);
+}
+.searchInput:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.formChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.formChip {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  white-space: nowrap;
+}
+
+.formChipWarn {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #f7cfc7;
+  color: #8a271a;
+  white-space: nowrap;
+}
+
+.missing {
+  font-style: italic;
+  color: #6f6f62;
+  white-space: nowrap;
+}
+
+.empty {
+  color: #5f5f54;
+  font-size: 14px;
+  padding: 14px 8px;
+}
+
+.pagerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 8px;
+  flex-wrap: wrap;
+}
+
+.pagerLabel {
+  font-size: 13px;
+  color: #5f5f54;
+}
+
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tree {
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .treeNodeChild {
+    padding-left: 10px;
+  }
+  .searchWrap {
+    margin-left: 0;
+    width: 100%;
+  }
+  .searchInput {
+    width: 100%;
+  }
+}

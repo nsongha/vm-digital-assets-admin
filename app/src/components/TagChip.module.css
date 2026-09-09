@@ -1,0 +1,20 @@
+.chip {
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.dense {
+  font-size: 13px;
+  padding: 6px 13px;
+}
+
+.shadow {
+  box-shadow: 0 3px 10px rgba(20, 20, 15, 0.05);
+}

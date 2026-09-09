@@ -1,0 +1,45 @@
+# Phụ thuộc và sản phẩm build — dựng lại được từ package-lock.json
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Rác hệ điều hành / trình soạn thảo
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Biến môi trường — KHÔNG BAO GIỜ commit.
+# Cấu hình vận hành (chuỗi kết nối CSDL, kho đối tượng, khoá API, địa chỉ
+# GS Immersive Tour qua VITE_GS_TOUR_URL) phải nằm ngoài mã nguồn — đúng cam
+# kết "cấu hình tách khỏi mã nguồn" ở docs/14 mục 10.1.
+.env
+.env.*
+!.env.example
+
+# Nhật ký và tệp tạm
+*.log
+npm-debug.log*
+.cache/
+coverage/
+
+# ---------------------------------------------------------------------------
+# DỮ LIỆU DI SẢN THẬT — không đưa vào Git.
+#
+# Git không phải nơi chứa dữ liệu số hoá: kho dự kiến hàng chục tới hàng trăm TB
+# (mô hình 3D, gaussian splat, ảnh TIFF, video ProRes), trong khi Git giữ toàn bộ
+# lịch sử mọi phiên bản nhị phân — repo sẽ phình không phanh và không ai clone nổi.
+# Dữ liệu thật thuộc về kho đối tượng có kiểm tra toàn vẹn và sao lưu 3-2-1
+# (xem docs/02-quy-trinh-bao-quan-sao-luu.md).
+#
+# CHỈ giữ lại phần khung: README mô tả cấu trúc và 5 template CSV metadata —
+# đây là tài liệu bàn giao cho cán bộ nhập liệu, không phải dữ liệu.
+data/*
+!data/README.md
+!data/06-metadata/
+data/06-metadata/*
+!data/06-metadata/*.csv
+
+# Trang kiểm tra bot của Cloudflare bị lưu nhầm khi tải tiêu chuẩn ISO — không phải tài liệu.
+docs/iso.html

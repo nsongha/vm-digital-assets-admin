@@ -1,0 +1,112 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 26px 12px;
+  flex-wrap: wrap;
+}
+
+.iconBtn {
+  border: 1px solid #e7e7dc;
+  background: #ffffff;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  flex: none;
+}
+.iconBtn:hover {
+  background: #f1f0e8;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  white-space: nowrap;
+  flex: none;
+}
+
+.actions {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+}
+
+.searchInput {
+  border: 1px solid #e7e7dc;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 10px 54px 10px 38px;
+  width: 280px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.searchBadge {
+  position: absolute;
+  right: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #6f6f62;
+  background: #f2f1e9;
+  padding: 3px 7px;
+  border-radius: 6px;
+}
+
+.bellBtn {
+  border: 1px solid #e7e7dc;
+  background: #ffffff;
+  cursor: pointer;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  flex: none;
+}
+.bellBtn:hover {
+  background: #f1f0e8;
+}
+
+/* A8 responsive — search box shrinks and drops its ⌘F badge so the header
+   doesn't force horizontal overflow once the sidebar/content get tight. */
+@media (max-width: 1280px) {
+  .searchInput {
+    width: 200px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .header {
+    padding: 14px 16px 10px;
+    gap: 10px;
+  }
+  .title {
+    font-size: 19px;
+  }
+  .searchInput {
+    width: 120px;
+    padding-right: 14px;
+  }
+  .searchBadge {
+    display: none;
+  }
+}

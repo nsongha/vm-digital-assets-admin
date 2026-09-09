@@ -1,0 +1,25 @@
+.chart {
+  display: block;
+}
+
+.value {
+  font-size: 12px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.label {
+  font-size: 11px;
+  fill: #5f5f54;
+  font-weight: 600;
+}
+
+.baseline {
+  stroke: #dcdcd0;
+  stroke-width: 1;
+}
+
+.empty {
+  font-size: 13px;
+  fill: #5f5f54;
+}

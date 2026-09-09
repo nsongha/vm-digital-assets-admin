@@ -1,0 +1,19 @@
+.card {
+  background: rgba(255, 255, 255, 0.34);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 6px 20px rgba(20, 20, 15, 0.06);
+}
+
+.dense {
+  padding: 10px 22px;
+}
+
+.dark {
+  background: color-mix(in srgb, var(--ink) 62%, transparent);
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(20, 20, 15, 0.15);
+}

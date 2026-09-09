@@ -1,0 +1,38 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navBtn {
+  border: 1px solid #e7e7dc;
+  background: #ffffff;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+}
+.navBtn:hover:not(:disabled) {
+  background: #f1f0e8;
+}
+.navBtn:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.pageBtn {
+  border: none;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+}

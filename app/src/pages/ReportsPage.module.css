@@ -1,0 +1,270 @@
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 6px 0 6px;
+}
+
+.rangeCaption {
+  font-size: 12px;
+  color: #5f5f54;
+  margin: 0 0 18px;
+}
+
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.kpiTile {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kpiTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kpiIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.kpiLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #5f5f54;
+}
+
+.kpiValue {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.kpiSub {
+  font-size: 12px;
+  color: #5f5f54;
+}
+
+.chartGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.chartHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.chartTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.chartCaption {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: #5f5f54;
+  line-height: 1.5;
+}
+
+.chartWrap {
+  overflow-x: auto;
+}
+
+.exportRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.exportBtn {
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 10px 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.exportBtn:hover {
+  background: #f3f3ec;
+}
+.exportBtnPrimary {
+  background: var(--ink);
+  color: #ffffff;
+  border-color: var(--ink);
+}
+.exportBtnPrimary:hover {
+  background: var(--ink-hover);
+}
+
+.exportHint {
+  font-size: 12px;
+  color: #5f5f54;
+}
+
+/* Export modal */
+
+.modalTitle {
+  margin: 0 0 6px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.modalDesc {
+  font-size: 13px;
+  color: #5f5f54;
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+
+.modalLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5f5f54;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.scopeCol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.scopeOption {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1.5px solid #dcdcd0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+.scopeOption[data-active='true'] {
+  border-color: var(--ink);
+  background: #f2f1e9;
+}
+
+.scopeDot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid #6f6f62;
+  flex: none;
+  margin-top: 2px;
+  display: grid;
+  place-items: center;
+}
+.scopeDot[data-active='true'] {
+  border-color: var(--ink);
+}
+.scopeDotInner {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.scopeText {
+  font-size: 13px;
+}
+.scopeTitle {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.scopeMeta {
+  color: #5f5f54;
+}
+
+.logNote {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #5f5f54;
+  background: #f2f1e9;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancelBtn {
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 9px 18px;
+}
+.cancelBtn:hover {
+  background: #f3f3ec;
+}
+
+.confirmBtn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 9px 20px;
+}
+.confirmBtn:hover {
+  background: var(--ink-hover);
+}
+
+@media (max-width: 1280px) {
+  .kpiRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1024px) {
+  .chartGrid {
+    grid-template-columns: 1fr;
+  }
+  .kpiRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}

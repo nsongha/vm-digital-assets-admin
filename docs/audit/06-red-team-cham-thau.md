@@ -1,0 +1,852 @@
+# Audit 06 — Red-team: hồ sơ này bị đánh trượt ở đâu
+
+> Người thực hiện: subagent lăng kính red-team · Ngày: 12/08/2026
+
+**Phạm vi đã đọc:** `docs/00`, `docs/03`, `docs/04`, `docs/05`, `docs/16` (đọc đầy đủ); grep có mục tiêu trên `docs/01`, `docs/06`, `docs/09`, `docs/10`, `docs/11`, `docs/15`; đối chiếu code `app/src/` (14.768 LOC), `app/package.json`, `app/index.html`, `app/tests/`.
+
+**Nguyên tắc của báo cáo này:** tôi đứng ở ba vị trí cùng lúc — thành viên hội đồng khó tính, nhà thầu cạnh tranh muốn đánh trượt hồ sơ, và chuyên gia bảo tàng quốc tế phản biện. Mọi cáo buộc đều kèm `đường/dẫn:dòng`. Chỗ nào hồ sơ làm tốt hơn mặt bằng, tôi ghi nhận ở mục 1b — vì đội mình cần biết đâu là chỗ nên đẩy mạnh, không chỉ chỗ phải vá.
+
+**Một lưu ý quan trọng về `docs/16-van-de-da-biet.md`:** tài liệu này tự nhận 12 hạn chế và nhận rất thẳng thắn. Những gì đã nằm trong đó **không được tính là phát hiện mới**. Nhưng tôi phát hiện `docs/16` có **một chỗ tự nhận SAI SỰ THẬT theo hướng có lợi cho nhà thầu** (mục 3.3, xem Đòn 2 bên dưới) — đây là loại lỗi nguy hiểm nhất trong một tài liệu có nhan đề "công bố trung thực toàn bộ hạn chế", vì nó phá hủy chính thứ tài sản mà tài liệu đó đang xây: sự tin cậy.
+
+---
+
+## 1. Tóm tắt điều hành — 5 đòn nguy hiểm nhất
+
+Xếp theo thứ tự: đòn nào làm hội đồng mất niềm tin nhanh nhất khi bấm thử trực tiếp.
+
+### Đòn 1 — App vẫn gọi ra Google Fonts và Wikimedia; câu trả lời "dữ liệu không ra nước ngoài" hiện là SAI, và bài test ngắt mạng sẽ vỡ ngay trên sân khấu
+
+Kịch bản demo dạy người trình diễn trả lời câu hỏi chủ quyền dữ liệu bằng: *"Không. Hệ thống đặt tại hạ tầng trong nước, toàn bộ tài nguyên tĩnh (font, ảnh) đóng gói nội bộ, không gọi dịch vụ ngoài lãnh thổ"* — kèm điều kiện *"chỉ nói được câu này sau khi checklist xác nhận đã gỡ Google Fonts và Wikimedia"* (`docs/05-kich-ban-demo.md:48`). Checklist yêu cầu ngắt Wi-Fi và tải lại toàn bộ app để xác nhận (`docs/05-kich-ban-demo.md:67-68`).
+
+Điều kiện đó **chưa được đáp ứng**. Tại thời điểm audit:
+
+- `app/index.html:7` — `<link rel="preconnect" href="https://fonts.googleapis.com" />`
+- `app/index.html:8` — `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />`
+- `app/index.html:10` — tải stylesheet font `Plus Jakarta Sans` trực tiếp từ `fonts.googleapis.com`
+- `app/src/data/collections.ts:7,9,11,13,15,17` — **6 ảnh bìa bộ sưu tập** trỏ thẳng `https://commons.wikimedia.org/...`
+- `app/src/pages/DashboardPage.tsx:15` — `HERO_IMG` (ảnh lớn nhất của màn Tổng quan, màn đầu tiên hội đồng nhìn thấy) trỏ `https://commons.wikimedia.org/.../Khuê_văn_các.jpg?width=1400`
+
+Hậu quả kép, và cả hai đều xảy ra trong phòng bảo vệ:
+
+1. **Hậu quả pháp lý/uy tín:** nếu người trình diễn đọc đúng câu đã soạn ở `docs/05:48`, đó là một **phát biểu sai sự thật trước hội đồng chấm thầu**. Một hội đồng có người biết mở DevTools → tab Network là chứng minh được trong 15 giây. Với hồ sơ nhấn mạnh chủ quyền dữ liệu và Luật Dữ liệu 60/2024, đây là đòn chí mạng — không phải vì lỗi kỹ thuật, mà vì nhà thầu bị bắt quả tang nói sai.
+2. **Hậu quả trình diễn:** kịch bản dự phòng ghi *"App chạy hoàn toàn cục bộ (không cần Internet) — nếu mạng phòng họp chập chờn, vẫn demo bình thường"* (`docs/05:76`). Sai. Mạng phòng họp chập chờn → font rơi về font hệ thống (vỡ toàn bộ bố cục đã căn theo Plus Jakarta Sans), **ảnh hero Tổng quan vỡ**, **6 ảnh bìa bộ sưu tập vỡ**. Đúng màn đầu tiên và đúng màn có nhiều ảnh nhất.
+
+Đây là đòn nguy hiểm nhất vì nó **không có trong `docs/16`** — hồ sơ không hề biết mình đang mắc lỗi này, trong khi checklist demo lại giả định nó đã được sửa.
+
+### Đòn 2 — Không hề có trình xem 3D/splat thật; hai tài liệu mô tả thư viện và loader mà mã nguồn không có
+
+`docs/03-ma-tran-truy-vet.md:25` mô tả app admin: *"viewer đơn tài sản… (mục A9: bật trình xem cho cả tài sản Splat, tải GLB qua GLTFLoader và `.ply`/`.sog` qua thư viện `gaussian-splats-3d`)"*.
+
+`docs/16-van-de-da-biet.md:91` khẳng định tương tự: *"Trình xem đã bật cho cả mesh 3D (qua GLTFLoader) và gaussian splat (qua thư viện `gaussian-splats-3d`), nhưng dữ liệu hiển thị vẫn là tệp mẫu đóng gói cùng ứng dụng"*.
+
+Thực tế mã nguồn:
+
+- `app/package.json` — dependency 3D duy nhất là `"three": "^0.185.1"`. **Không có** `gaussian-splats-3d`. Kiểm tra `node_modules` cũng không có gói này.
+- Grep toàn bộ `app/src/` cho `GLTFLoader`, `PLYLoader`, `gaussian`, `.sog` → **0 kết quả**. Chuỗi `splat` chỉ xuất hiện như **giá trị dữ liệu** (`digitalForm: 'splat'`, ví dụ `app/src/data/objects/structures.ts:27,79,102,112,137,160`), không phải mã trình xem.
+- `app/src/components/StelePreview.tsx:1-2` import `three` và **dựng hình bằng primitive thủ công**: `BoxGeometry(2.7, 0.32, 1.7)` làm bệ (`:47`), `SphereGeometry(1.05, 32, 16)` bóp méo làm mai rùa (`:51-52`), `SphereGeometry(0.27, 20, 12)` làm đầu rùa (`:55-57`), `BoxGeometry(1.5, 2.1, 0.26)` làm thân bia (`:59`).
+
+Nói thẳng: cái mà hội đồng sẽ xoay ở phút 3:15–4:45 — đoạn kịch bản tự gọi là *"cao trào"*, *"90 giây ăn điểm cao nhất — kéo dài nó"* (`docs/05:27`) — **không phải mô hình quét 3D của bia Tiến sĩ**. Nó là một khối hộp và mấy hình cầu bóp méo, dựng bằng code, giống hệt nhau cho mọi tài sản.
+
+Ba cách đòn này nổ trong phòng:
+
+- Hội đồng mở hai bia Tiến sĩ khác nhau → **mô hình giống hệt nhau từng pixel**. Câu hỏi tiếp theo: "82 bia scan 0,2mm mà sao trông y hệt nhau?"
+- Người trình diễn đọc đúng thoại đã soạn: *"Scan 0,2mm, bản gốc giữ nguyên"* (`docs/05:27`) trong khi chỉ vào một khối hộp — đây là **nói quá về một thứ hội đồng đang nhìn tận mắt**.
+- Kịch bản còn cho phép nói *"Đây là dữ liệu Gaussian splat quét thật, trình xem đã nối trực tiếp — không còn là ảnh xem trước"* (`docs/05:27`) nếu đã copy `.ply` từ NAS. **Không có đường code nào đọc được `.ply`.** Copy file về máy cũng không mở được. Điều kiện trong checklist (`docs/05:62`) là điều kiện sai — nó kiểm tra "đã copy file chưa" trong khi vấn đề thật là "app có đọc được file đó không", và câu trả lời là không.
+
+Mức nguy hiểm cao hơn Đòn 1 ở một khía cạnh: `docs/16` — tài liệu tự nhận hạn chế — **đã tự nhận sai theo hướng có lợi cho mình**. Nếu hội đồng phát hiện, toàn bộ 12 mục tự nhận còn lại trong `docs/16` mất giá trị làm chứng, và lời tựa *"không có mục nào được che giấu hoặc giảm nhẹ mức độ ảnh hưởng"* (`docs/16:17`) trở thành bằng chứng chống lại nhà thầu.
+
+### Đòn 3 — Nút "Xuất Excel" không tạo file, và chính app in dòng chữ thừa nhận điều đó ngay trên màn hình mà kịch bản bảo phải "trình bày dứt khoát"
+
+`docs/05-kich-ban-demo.md:30` (phút 6:45–7:45): *"bấm **Xuất Excel** → mở file thật → 'Báo cáo gửi Sở lấy trực tiếp ở đây, không phải tổng hợp tay.'"*, và ở cột "Bẫy phải né" lại ghi: *"Màn này đã hoàn thành và số liệu khớp với Tổng quan (cùng một nguồn dữ liệu) — **trình bày dứt khoát, không cần rào trước đón sau**"*.
+
+Thực tế `app/src/pages/ReportsPage.tsx:311`, hiển thị ngay cạnh nút:
+
+> `Báo cáo mô phỏng — số liệu lấy trực tiếp từ dữ liệu hiện có, không tạo tệp tải xuống thật.`
+
+Và `ReportsPage.tsx:157-162` (`confirmExport`) chỉ đóng modal và ghi một dòng thông báo — không có `Blob`, không có `URL.createObjectURL`, không có thẻ `<a download>`, không có thư viện xlsx trong `package.json`.
+
+Đây là tình huống tệ nhất có thể xảy ra: **người trình diễn nói một đằng, màn hình chiếu lên tường nói một nẻo, cùng lúc, cách nhau 3 cm.** Hội đồng ngồi dưới đọc chữ trên màn chiếu nhanh hơn nghe người nói. Kịch bản còn chủ động dặn "không cần rào trước đón sau" — tức là đẩy người trình diễn vào đúng cái bẫy đó với sự tự tin tối đa.
+
+Ghi nhận công bằng: kịch bản có chuẩn bị Tab 3 với file Excel đã xuất sẵn (`docs/05:57`). Nhưng dòng chữ tự thú trên màn hình vẫn còn đó, và câu thoại "mở file thật" vẫn là nói quá.
+
+### Đòn 4 — Kịch bản mời hội đồng kiểm chứng "không có số ghi cứng", nhưng ngay trên 4 ô đó có 4 con số ghi cứng
+
+`docs/05-kich-ban-demo.md:25` (phút 1:00–1:45) dạy người trình diễn **chủ động mời hội đồng**: *"Xin mời một thầy/cô bấm thử vào bất kỳ ô nào — pipeline, bộ sưu tập, dung lượng — mọi con số ở đây tính trực tiếp từ cùng một kho dữ liệu, **không có số ghi cứng**"*, và tự đánh giá đây là chỗ *"biến điểm yếu cũ (số liệu tự mâu thuẫn) thành điểm mạnh chủ động"*.
+
+Phần lớn tuyên bố này **đúng và đáng khen** — xem mục 1b. Nhưng nó nói quá ở một chi tiết nằm đúng trên 4 ô được mời bấm: **badge tăng/giảm phần trăm là hằng số viết tay**.
+
+- `app/src/data/dashboard.ts:71` — `trend: '+3,1%'` (ô Tổng dữ liệu số hóa)
+- `app/src/data/dashboard.ts:84` — `trend: '−12%'` (ô Chờ duyệt)
+- `app/src/data/dashboard.ts:96` — `trend: '+6,4%'` (ô Đã xuất bản)
+- `app/src/data/dashboard.ts:108` — `trend: '+4%'` (ô Dung lượng)
+- Cộng thêm `vals: [40, 52, 48, 60, 68, 74]` (`:73`) và ba mảng tương tự (`:86`, `:98`, `:110`) — dữ liệu vẽ sparkline, cũng viết tay.
+
+Mã nguồn tự phân loại các trường này là *"PURELY decorative per-card config (colors/icons/sparkline shape) that has no factual claim attached to it"* (`app/src/data/dashboard.ts:6-8`) và `:57-59` lặp lại rằng trend/sparkline là "decorative, not a factual claim".
+
+**Lập luận đó không đứng vững trước hội đồng.** Một badge "−12%" màu xanh cạnh ô "Chờ duyệt" là một **tuyên bố về xu hướng nghiệp vụ** — nó nói tồn đọng đang giảm 12%. Đó là con số Ban Giám đốc sẽ đọc. Gọi nó là "trang trí" là cách nhà phát triển tự trấn an, không phải cách người dùng đọc màn hình. Chưa kể: mock data không có trục thời gian để tính "so với kỳ trước", nên con số này **không thể** derive được — nó bắt buộc phải giả, và vì thế không nên hiển thị.
+
+Rủi ro cụ thể: hội đồng nhận lời mời, bấm vào ô "Chờ duyệt", đối chiếu số bản ghi thật, rồi hỏi *"−12% này so với cái gì?"*. Người trình diễn vừa mới tự tin tuyên bố "không có số ghi cứng" 40 giây trước.
+
+### Đòn 5 — Đăng nhập chấp nhận mọi tài khoản; OTP là hằng số `123456` kèm nút tự điền
+
+`app/src/pages/LoginPage.tsx:102-106` — toàn bộ phần kiểm tra thông tin đăng nhập:
+
+```
+if (!email.trim() || !password.trim()) {
+  setCredError('Sai tài khoản hoặc mật khẩu.');
+  return;
+}
+setCredError('');
+```
+
+Nghĩa là: **bất kỳ chuỗi không rỗng nào cũng đăng nhập được.** Gõ `a` / `a` là vào. Thông báo "Sai tài khoản hoặc mật khẩu" chỉ bật khi để trống ô — tức là nó **nói dối về lý do từ chối**.
+
+Bước OTP: `app/src/pages/LoginPage.tsx:22` — `const DEMO_OTP = '123456';`, so sánh chuỗi trực tiếp tại `:168-171`, kèm nút *"Điền mã demo"* tự động điền đúng mã (`:149-153`).
+
+`AuthContext` không kiểm chứng gì thêm — `app/src/context/AuthContext.tsx:74-75` chỉ ghi `localStorage` hai khóa `vmAdmin.demoRole` / `vmAdmin.authed = '1'`. Route guard đọc lại đúng hai khóa đó (`:65`). Hệ quả: **mở DevTools gõ `localStorage.setItem('vmAdmin.authed','1')` là vào thẳng hệ thống với vai bất kỳ**, không qua màn đăng nhập.
+
+Ghi nhận công bằng: `app/src/pages/LoginPage.tsx:12` có chú thích trung thực *"Toàn bộ luồng xác thực là MÔ PHỎNG (không có backend thật)"*. Vấn đề không nằm ở code — với một demo không backend thì làm vậy là hợp lý. Vấn đề nằm ở chỗ **kịch bản demo không dặn người trình diễn nói ra điều này**, trong khi phút 0:20–1:00 lại dành riêng cho đăng nhập và phân quyền (`docs/05:24`), và trong khi hồ sơ ATTT đề xuất cấp độ 2–3 (`docs/16:157`) với các yêu cầu xác thực tương ứng.
+
+Rủi ro cụ thể: hội đồng nói *"cho tôi thử đăng nhập"*, gõ bừa `abc`/`abc`, vào được. Ba giây. Không cần chuyên môn kỹ thuật để phát hiện.
+
+---
+
+## 1b. Ghi nhận: năm chỗ hồ sơ này mạnh hơn mặt bằng hồ sơ thầu CNTT nhà nước
+
+Phần này ngắn nhưng bắt buộc phải có — vì nếu đội mình vá xong 5 đòn trên, đây là chỗ để **tấn công ngược**.
+
+1. **`docs/16-van-de-da-biet.md` tồn tại, và tự nhận rất thẳng.** Lập luận ở `docs/16:17` — *"một hồ sơ dự thầu không có mục 'hạn chế đã biết' đáng ngờ hơn một hồ sơ có, vì mọi phần mềm đều có hạn chế"* — là lập luận đúng và hiếm. Mặt bằng hồ sơ thầu Việt Nam gần như không bao giờ có tài liệu này. Đây là vũ khí, không phải điểm yếu (với điều kiện sửa mục 3.3, xem Đòn 2).
+
+2. **Kế hoạch kiểm thử không tô hồng.** `docs/11-ke-hoach-kiem-thu.md:537-539` viết thẳng: *"mức độ tự động hoá kiểm thử của dự án còn thấp"*, *"Toàn bộ 36 ca kiểm thử ở mục 7… hiện là kiểm thử thủ công theo kịch bản"*, *"tài liệu này không tô hồng mức độ tự động hoá để hồ sơ trông đầy đủ hơn thực tế"*. Tôi đã đi tìm số liệu độ phủ giả, tên công cụ (Jest/Vitest/Playwright/k6) không có trong `package.json` — **không tìm thấy**. `docs/11:150` khi nhắc k6/Locust thì ghi rõ là "ví dụ", "chốt ở giai đoạn triển khai". Đây là sự tự kiềm chế đáng ghi nhận.
+
+3. **Việc "mọi con số derive từ một nguồn" là có thật trong code, không phải khẩu hiệu.** `app/src/data/selectors.ts:5-6` tuyên bố nguyên tắc A2, và `app/src/data/dashboard.ts:2-8` xác nhận các trường `n`/`v`/`sub`/storage **đã bị gỡ khỏi file dữ liệu** và chuyển sang derive. `selectors.ts:9-22` (`totalCount`, `countByStatus`, `totalSizeMB`, `totalSizeGB`) và `:47-52` (`storageBreakdown` tính phần trăm từ tổng thật) là code thật. Trừ badge trend (Đòn 4), lời mời hội đồng bấm thử ở `docs/05:25` là lời mời **đội mình thắng được**.
+
+4. **Can chi được tính bằng thuật toán, không gõ tay — và có test.** `app/src/utils/canChi.ts:18-20` dùng đúng công thức chuẩn `mod(year-4, 10)` / `mod(year-4, 12)`, với hàm `mod` xử lý đúng số âm (`:12-14`). Tôi kiểm tay: 1442 → `1438 mod 10 = 8` → Nhâm, `1438 mod 12 = 10` → Tuất → **Nhâm Tuất, đúng**. 1484 → Giáp Thìn, đúng. `app/tests/canChi.test.ts` chạy pass 3/3, gồm cả bất biến chu kỳ 60 năm. `docs/11:543` giải thích lý do chọn hàm này tự động hóa đầu tiên — vì **đã từng gõ sai ba lần thật** (Quý Mão/Quý Mùi 1463, Kỷ Sửu/Kỷ Mùi 1499, Bính Thân/Bính Thìn 1496, đối chiếu `docs/04:49`). Đây là lập luận kỹ thuật thuyết phục với hội đồng có chuyên gia Hán Nôm.
+
+5. **Kỷ luật trích dẫn pháp lý cao bất thường.** `docs/03:13` đặt quy tắc chỉ đưa vào bảng những điều khoản mang nhãn `[ĐÃ XÁC MINH]`, và tài liệu tuân thủ quy tắc đó đến mức tự gắn cờ chính mình: `docs/03:26` ghi *"tình trạng hiệu lực hiện hành của quyết định này [CHƯA XÁC MINH được nhãn chính thức]"*, `docs/03:62` cảnh báo *"nguyên tắc phân tách trách nhiệm… không có văn bản pháp luật Việt Nam nào quy định trực tiếp — không gán nhầm cho một điều luật cụ thể"*, `docs/03:100` tự thừa nhận D10 là *"Khoảng trống thực sự"*. Bẫy NĐ 47/2020 đã được xử lý đúng (`docs/03:91`, `docs/05:31`). Mặt bằng hồ sơ thầu hay trích luật đã hết hiệu lực; hồ sơ này thì ngược lại.
+
+---
+
+## 2. Hướng 1: Khoảng cách tài liệu ↔ ứng dụng
+
+Bảng dưới chỉ liệt kê các khoảng cách **có thể bị phát hiện bằng cách bấm thử hoặc mở mã nguồn**, không liệt kê những chỗ `docs/16` đã tự nhận đúng và đủ.
+
+| # | Tài liệu tuyên bố | Vị trí trong docs | Thực tế trong app | Bằng chứng | Mức nguy hiểm |
+|---|---|---|---|---|---|
+| G1 | "toàn bộ tài nguyên tĩnh (font, ảnh) đóng gói nội bộ, không gọi dịch vụ ngoài lãnh thổ" — **nhưng kèm điều kiện rõ ràng ngay trong cùng ô: *"chỉ nói được câu này sau khi checklist xác nhận đã gỡ Google Fonts và Wikimedia"*** | `docs/05:48` | Font tải từ `fonts.googleapis.com`; 7 ảnh tải từ `commons.wikimedia.org` — tức **điều kiện chưa được thoả mãn** | `app/index.html:7,8,10`; `app/src/data/collections.ts:7,9,11,13,15,17`; `app/src/pages/DashboardPage.tsx:15` | **Rất cao** |
+
+> **Đính chính của điều phối viên audit (12/08/2026) về G1 — đọc trước khi dùng dòng này.** Đây **không** phải trường hợp tài liệu tuyên bố sai. `docs/05:48` đã tự rào đúng chỗ bằng điều kiện tiên quyết, và `docs/05:66-69` có sẵn checklist ngắt mạng chưa tick. Bản chất G1 vì vậy là **việc phải làm còn tồn đọng**, không phải **lỗi trung thực của hồ sơ** — khác hẳn G4 (nơi `docs/16`, tài liệu tự nhận hạn chế, khẳng định thẳng một năng lực không tồn tại mà không kèm điều kiện nào).
+>
+> Phân biệt này quan trọng theo cả hai chiều. Với người viết hồ sơ: đừng sửa `docs/05` — nó đang đúng; hãy làm nốt việc gỡ font/ảnh (RT-01). Với người trình diễn: rủi ro có thật và vẫn ở mức Rất cao, vì nếu tới ngày bảo vệ mà chưa gỡ, câu đã soạn sẽ trở thành phát biểu sai sự thật kiểm chứng được trong 15 giây bằng DevTools. Nói cách khác: hồ sơ không nói dối, nhưng đang đặt sẵn một cái bẫy cho chính người lên trình bày nếu checklist bị bỏ qua.
+| G2 | "App chạy hoàn toàn cục bộ (không cần Internet)… vẫn demo bình thường" | `docs/05:76` | Ngắt mạng → mất font Plus Jakarta Sans, vỡ ảnh hero Tổng quan + 6 ảnh bìa bộ sưu tập | như G1 | **Rất cao** |
+| G3 | "tải GLB qua GLTFLoader và `.ply`/`.sog` qua thư viện `gaussian-splats-3d`" | `docs/03:25` | Không có loader nào; không có gói `gaussian-splats-3d`; grep `GLTFLoader\|PLYLoader\|gaussian\|\.sog` trong `app/src/` → 0 kết quả | `app/package.json` (dep 3D duy nhất: `three`); `app/src/components/StelePreview.tsx:1-2` | **Rất cao** |
+| G4 | "Trình xem đã bật cho cả mesh 3D (qua GLTFLoader) và gaussian splat (qua thư viện `gaussian-splats-3d`)" | `docs/16:91` | Như G3. Đây là **tài liệu tự nhận hạn chế lại tự nhận sai theo hướng có lợi** | như G3 | **Rất cao** |
+| G5 | Mô hình 3D bia Tiến sĩ, "Scan 0,2mm, bản gốc giữ nguyên" | `docs/05:27` | Hình khối dựng thủ công bằng primitive `three`: hộp + 3 hình cầu bóp méo; **giống hệt nhau cho mọi tài sản** | `app/src/components/StelePreview.tsx:47,51-52,55-57,59` | **Rất cao** |
+| G6 | "bấm Xuất Excel → mở file thật"; "trình bày dứt khoát, không cần rào trước đón sau" | `docs/05:30` | Không tạo file. App tự in dòng "không tạo tệp tải xuống thật" ngay cạnh nút | `app/src/pages/ReportsPage.tsx:311`, `:157-162`; `package.json` không có thư viện xlsx | **Rất cao** |
+| G7 | "mọi con số ở đây tính trực tiếp từ cùng một kho dữ liệu, không có số ghi cứng" | `docs/05:25` | 4 badge phần trăm + 4 mảng sparkline là hằng số viết tay, nằm đúng trên 4 ô được mời bấm | `app/src/data/dashboard.ts:71,73,84,86,96,98,108,110` | **Cao** |
+| G8 | Luồng đăng nhập + phân quyền là nội dung chính của phút 0:20–1:00 | `docs/05:24` | Mọi email/mật khẩu không rỗng đều vào được; OTP cố định `123456`; có nút tự điền OTP | `app/src/pages/LoginPage.tsx:102-106`, `:22`, `:149-153`, `:168-171` | **Cao** |
+| G9 | Phiên đăng nhập và phân quyền theo vai | `docs/03:70` (UC-06 "Đáp ứng") | Phiên = 2 khóa `localStorage` (`vmAdmin.authed`, `vmAdmin.demoRole`); sửa bằng DevTools là vào thẳng, bỏ qua đăng nhập | `app/src/context/AuthContext.tsx:59,65,74-75,84-85` | **Cao** |
+| G10 | "Mọi thao tác đều lưu vết, **không sửa được**, xuất ra được để phục vụ thanh tra" | `docs/05:32` | Grep `append\|immutable\|WORM\|không sửa` trong `app/src/services/mock/auditService.ts` + `app/src/pages/AuditLogPage.tsx` → **0 kết quả**. Không có chuỗi băm, không có cơ chế chống sửa; `auditService.ts` dài 39 dòng | `app/src/services/mock/auditService.ts` (toàn file); ADR `docs/adr/0012-nhat-ky-append-only-thoi-han-luu-theo-cap-do-attt.md` mô tả nguyên tắc chưa hiện thực | **Cao** |
+| G11 | Đặc tả OpenAPI khai báo server `https://api.dsvanmieu.gov.vn/api/v1` nhãn **"Production"**, `https://auth.dsvanmieu.gov.vn/oauth2/token` | `docs/06:73-74`, `:698` | Không có backend. Tên miền `dsvanmieu.gov.vn` chưa được xác nhận là đã đăng ký/thuộc quyền chủ đầu tư *(cần kiểm chứng)*. App dùng cùng tên miền giả trong dữ liệu kết nối | `app/src/data/connections.ts:26`; `app/package.json` không có backend | **Cao** |
+| G12 | UC-06 "Đáp ứng": "vòng đời tài khoản mời/khóa/reset mật khẩu/**MFA**" | `docs/03:70` | MFA = so sánh chuỗi với hằng số `'123456'` trong mã nguồn client, kèm nút tự điền | `app/src/pages/LoginPage.tsx:22,149-153,168-171` | **Cao** |
+| G13 | "kèm mã kiểm tra toàn vẹn SHA-256 để 10 năm sau vẫn biết tệp còn nguyên vẹn hay đã hỏng" | `docs/05:27` | Không có mã băm nào được tính. Grep `crypto\.\|createHash\|subtle\.digest` trong `app/src/` → 0 kết quả; chuỗi checksum là dữ liệu tĩnh | grep toàn `app/src/`; `app/package.json` không có thư viện băm | **Cao** |
+| G14 | Chỉ tiêu "Thời gian hoạt động ≥ 99,5%/tháng", "RPO ≤ 24 giờ", "RTO ≤ 4 giờ" | `docs/01:480,482,483`, `:1076-1077` | Là **chỉ tiêu cam kết**, không phải số đo — hợp lệ. Rủi ro nằm ở chỗ kịch bản demo đọc chúng như sự thật đang vận hành: *"Cam kết mất tối đa 24 giờ dữ liệu và khôi phục trong 4 giờ. Hằng năm diễn tập phục hồi và có biên bản"* (`docs/05:32`) — thì hiện tại **chưa có lần diễn tập nào** | `docs/05:32` vs `docs/01:480-483` | Trung bình |
+| G15 | "Kiểm tra toàn vẹn định kỳ đạt tỷ lệ ≥ 99,9% tệp hợp lệ" (MT-06) | `docs/01:209` | Chỉ tiêu hợp lệ, nhưng không có cơ chế kiểm tra toàn vẹn nào trong code (xem G13) → chỉ tiêu chưa có đường đo | `docs/01:209` + grep như G13 | Trung bình |
+| G16 | i18n: "toàn bộ chuỗi hiển thị nằm trong một tệp cấu hình riêng, tiếng Việt đã hoàn chỉnh" | `docs/05:46` | Đúng về kiến trúc. `vi.ts` 233 dòng, `en.ts` 22 dòng, `fr.ts` 19 dòng — khớp đúng những gì `docs/16:73` đã tự nhận | `app/src/i18n/vi.ts`, `en.ts`, `fr.ts` (đếm dòng) | Thấp (đã tự nhận) |
+| G17 | Cây phân khu ở trang Đối tượng di sản | `docs/16:120-127` tự nhận `zoneOf()` suy từ chuỗi `loc` | Đúng như tự nhận. Rủi ro còn lại: nếu hội đồng đổi tên/sửa mô tả một đối tượng trong lúc demo thì nó nhảy sai phân khu | `app/src/pages/ObjectsPage.tsx` (hàm `zoneOf`) | Thấp (đã tự nhận) |
+| G18 | Ma trận truy vết tự đánh dấu D10 (vòng đời & thời hạn lưu trữ) là "Khoảng trống thực sự", chưa quyết định gắn vào B8 hay C1/B7 | `docs/03:100` | Trung thực, nhưng **để ngỏ một quyết định thiết kế trong tài liệu nộp thầu** — hội đồng sẽ hỏi đúng vào đó vì nó đã được đánh dấu sẵn | `docs/03:100` | Trung bình |
+| G19 | D9 (ký số & chứng thực bản số hóa) "thuộc C1 — badge ký số khi xuất bản" | `docs/03:99` | Không có mã ký số nào; grep `sign\|jwt\|pki\|x509\|chữ ký số` trong `app/src/` không cho ra cơ chế ký. Đây là nghĩa vụ **Bắt buộc** theo Luật GDĐT 20/2023 Điều 12–13 + NĐ 137/2024 như chính `docs/03:99` viện dẫn | `docs/03:99` vs grep `app/src/` | **Cao** |
+| G20 | `docs/03:99` tự ghi "Cần review để tránh làm trùng 2 nơi" | `docs/03:99` | Ghi chú công việc nội bộ (`Cần review`, `Cần quyết định`) còn sót trong tài liệu nộp thầu — cùng loại với `docs/03:100`, `docs/03:104` | `docs/03:99,100,104` | Trung bình |
+
+**Nhận xét xuyên suốt bảng:** khoảng cách nguy hiểm nhất **không** nằm ở chỗ "app chưa có backend" — điều đó `docs/16:27-34` đã tuyên bố sòng phẳng và hội đồng chấp nhận được với một bản demo. Nguy hiểm nằm ở **những câu thoại trong kịch bản demo mô tả năng lực mà app không có** (G1, G2, G5, G6, G7, G10, G13), vì đó là những câu sẽ được nói ra thành tiếng, trước mặt hội đồng, trong khi màn hình đang chiếu bằng chứng ngược lại.
+
+---
+
+## 3. Hướng 2: Câu hỏi sát thủ của hội đồng
+
+Mười bốn câu dưới đây là những câu tôi sẽ hỏi nếu ngồi ghế hội đồng, hoặc sẽ mớm cho hội đồng nếu là nhà thầu cạnh tranh. Kịch bản demo đã chuẩn bị 8 câu (`docs/05:39-48`); tôi đánh giá lại chất lượng chuẩn bị đó và bổ sung những câu hiểm hơn mà hồ sơ **chưa** chuẩn bị.
+
+---
+
+### Q1 — "Nhà thầu biến mất sau 2 năm thì Trung tâm làm gì với hệ thống này?"
+
+**Vì sao hiểm.** Đây là câu hỏi số một của mọi đơn vị sự nghiệp công lập, và là câu mà nhà thầu cạnh tranh chào sản phẩm quốc tế sẽ đánh mạnh nhất. Hệ thống tự phát triển bởi một nhà thầu = rủi ro tập trung tuyệt đối: không cộng đồng, không thị trường lập trình viên biết sản phẩm, không nhà thầu thứ hai nào nhận bảo trì mã nguồn của người khác nếu không có tài liệu và escrow. Kịch bản demo có nhắc *"không cần gọi nhà thầu"* ở `docs/05:31` nhưng đó là nói về cấu hình kết nối, không phải về sự tồn vong của nhà thầu.
+
+**Đội mình trả lời được không: Một phần.** Hồ sơ có `docs/14-van-hanh-va-ban-giao.md` (323 dòng) và cam kết hỗ trợ điều chỉnh trong hợp đồng bảo trì (`docs/16:169`). Nhưng tôi **không tìm thấy** trong tài liệu một cơ chế ký quỹ mã nguồn (source code escrow) với bên thứ ba, cũng không thấy điều khoản chuyển giao quyền sở hữu trí tuệ mã nguồn cho chủ đầu tư.
+
+**Câu trả lời tốt nhất có thể đưa ra.**
+> *"Ba lớp bảo vệ, thưa hội đồng. Một: toàn bộ mã nguồn thuộc quyền sở hữu của Trung tâm ngay khi nghiệm thu, không phải cấp phép sử dụng — Trung tâm có quyền thuê bất kỳ đơn vị nào bảo trì tiếp. Hai: hệ thống xây trên công nghệ phổ thông có thị trường nhân lực rộng (React, TypeScript, PostgreSQL), không dùng công nghệ độc quyền của nhà thầu; một lập trình viên trung cấp tuyển ngoài thị trường đọc được mã này. Ba: dữ liệu lưu ở định dạng chuẩn mở — metadata theo Dublin Core/CIDOC-CRM, gói lưu trữ theo OAIS, tệp gốc giữ nguyên định dạng gốc — nên kể cả khi phần mềm này bị thay hoàn toàn, dữ liệu vẫn nhập được vào hệ thống khác mà không mất mát. Ngoài ra chúng tôi đề xuất ký quỹ mã nguồn tại một bên thứ ba do Trung tâm chỉ định, kích hoạt khi nhà thầu ngừng hoạt động."*
+
+**Việc phải làm trước khi bảo vệ.** Bổ sung một mục "Thoát phụ thuộc nhà thầu" vào `docs/14`, gồm: điều khoản sở hữu mã nguồn, cơ chế escrow, và **cam kết xuất toàn bộ dữ liệu ra định dạng chuẩn mở bằng một lệnh** — cam kết cuối này mới là thứ có sức nặng, vì nó kiểm chứng được. Xem `RT-06`.
+
+---
+
+### Q2 — "Ai giữ khóa mã hóa? Nhà thầu có đọc được dữ liệu của chúng tôi không?"
+
+**Vì sao hiểm.** Câu này tách ngay nhà thầu chuyên nghiệp khỏi nhà thầu nghiệp dư. Với dữ liệu di sản thuộc Ký ức Thế giới UNESCO và dữ liệu cá nhân cán bộ (Luật BVDLCN 91/2025 mà chính hồ sơ viện dẫn tại `docs/03:71`), câu trả lời "chúng tôi quản lý hộ" là trượt.
+
+**Đội mình trả lời được không: Không.** Tôi grep toàn bộ `app/src/` cho `crypto`, `createHash`, `subtle.digest`, `encrypt`, `bcrypt`, `argon` → không có mã mã hóa nào. Trong tài liệu, `docs/15-ho-so-de-xuat-cap-do-attt.md` (321 dòng) có bàn về ATTT theo cấp độ, nhưng tôi không tìm thấy một mục **quản lý vòng đời khóa** (ai sinh khóa, ai giữ, luân chuyển bao lâu, quy trình khi nhân sự nghỉ việc). Đây là khoảng trống thật.
+
+**Câu trả lời tốt nhất có thể đưa ra.**
+> *"Nguyên tắc: Trung tâm giữ khóa, nhà thầu không giữ. Cụ thể — khóa mã hóa dữ liệu lưu trong kho khóa đặt tại hạ tầng của Trung tâm; tài khoản quản trị khóa do Trung tâm nắm, nhà thầu chỉ có tài khoản vận hành không đọc được dữ liệu đã mã hóa. Trong thời gian bảo hành, nếu nhà thầu cần truy cập dữ liệu thật để xử lý sự cố, phải có phê duyệt từng lần của lãnh đạo Trung tâm và toàn bộ phiên truy cập đó được ghi nhật ký, xuất ra được để hậu kiểm. Chúng tôi đề nghị đưa nguyên tắc này thành điều khoản hợp đồng, không phải cam kết miệng."*
+
+**Việc phải làm trước khi bảo vệ.** Viết một mục ngắn "Quản lý khóa và quyền truy cập của nhà thầu" trong `docs/15`, kèm bảng vai trò × quyền với khóa. Không cần code — đây là câu hỏi quản trị, trả lời bằng quy trình là đủ và đúng. Xem `RT-07`.
+
+---
+
+### Q3 — "Bản quyền và quyền nhân thân với tư liệu Hán Nôm: các ông số hóa rồi công bố thì ai là chủ sở hữu, và ai chịu trách nhiệm nếu phiên âm/dịch nghĩa sai?"
+
+**Vì sao hiểm.** Đây là câu hỏi của chuyên gia bảo tàng thật, không phải câu hỏi CNTT. Ba lớp quyền chồng nhau: (1) hiện vật gốc thuộc sở hữu toàn dân, Trung tâm quản lý; (2) **bản số hóa** — ai là tác giả, đơn vị scan hay Trung tâm; (3) **bản phiên âm và dịch nghĩa minh văn** — đây là **tác phẩm phái sinh có tác giả cụ thể**, người dịch có quyền nhân thân được đứng tên và quyền phản đối việc sửa làm phương hại uy tín. Hệ thống có trường Hán Nôm 3 lớp (nguyên văn/phiên âm/dịch nghĩa — `docs/03:52`), tức là **đang lưu trữ tác phẩm có quyền tác giả mà không có trường ghi tác giả bản dịch** *(cần kiểm chứng lại toàn bộ lược đồ trong `docs/07-mo-hinh-du-lieu.md` trước khi khẳng định trước hội đồng)*.
+
+**Đội mình trả lời được không: Một phần.** Hồ sơ có Rights statement ở C1 (`docs/03:52`, `docs/03:34`) — tốt hơn mặt bằng. Nhưng Rights statement ở mức tài sản không giải quyết được quyền nhân thân của **người phiên dịch**, cũng không giải quyết được câu hỏi trách nhiệm khi bản dịch sai.
+
+**Câu trả lời tốt nhất có thể đưa ra.**
+> *"Chúng tôi tách ba lớp quyền, thưa hội đồng. Hiện vật gốc: sở hữu toàn dân, Trung tâm là đơn vị được giao quản lý — hệ thống không đụng tới lớp này. Bản số hóa: quyền thuộc Trung tâm với tư cách đơn vị đặt hàng, nhà thầu không giữ quyền gì trên dữ liệu tạo ra. Bản phiên âm và dịch nghĩa: đây là tác phẩm phái sinh, hệ thống ghi tên người thực hiện và người thẩm định trên từng bản ghi, kèm ngày và nguồn tham chiếu — vì một bản dịch minh văn không có tên người chịu trách nhiệm thì không dùng được trong nghiên cứu. Về trách nhiệm nội dung: nhà thầu không tự đặt niên đại, không tự dịch minh văn — nguyên tắc này đã ghi thành cam kết trong hồ sơ, và mọi bản ghi phải qua cán bộ chuyên môn của Trung tâm ký xác nhận trước khi chuyển trạng thái Đã xuất bản."*
+
+Câu cuối là câu mạnh nhất và **có sẵn trong hồ sơ**: `docs/04:11` — *"Nhà thầu không tự đặt niên đại, vị trí hoặc danh tính hiện vật"*. Đây là một trong những câu tốt nhất của toàn bộ hồ sơ, phải thuộc lòng.
+
+**Việc phải làm trước khi bảo vệ.** Kiểm tra lược đồ Hán Nôm trong `docs/07-mo-hinh-du-lieu.md` xem đã có trường "người phiên âm/người dịch/người thẩm định" chưa; nếu chưa, bổ sung vào tài liệu (không cần code kịp). Xem `RT-08`.
+
+---
+
+### Q4 — "Dữ liệu có ra nước ngoài không?"
+
+**Vì sao hiểm.** Câu này đã có trong danh sách chuẩn bị (`docs/05:48`) — nghĩa là đội mình biết nó sẽ được hỏi. Nhưng như Đòn 1 đã chỉ ra, **câu trả lời đã soạn hiện đang sai sự thật**, và sai theo cách kiểm chứng được trong 15 giây bằng DevTools.
+
+**Đội mình trả lời được không: Không, cho đến khi sửa xong `RT-01`.** Sau khi sửa: **Có, và trả lời rất mạnh.**
+
+**Câu trả lời tốt nhất có thể đưa ra** (chỉ được nói sau khi `RT-01` xong và đã tự kiểm chứng bằng cách ngắt mạng):
+> *"Không. Hệ thống đặt tại hạ tầng trong nước theo phương án của Trung tâm. Toàn bộ tài nguyên tĩnh — phông chữ, ảnh, thư viện — đóng gói trong ứng dụng, không gọi bất kỳ dịch vụ nào ngoài lãnh thổ. Xin mời hội đồng kiểm chứng ngay: chúng tôi ngắt mạng máy trình diễn và tải lại toàn bộ ứng dụng."*
+
+Lời mời kiểm chứng cuối cùng biến một câu trả lời phòng thủ thành một màn trình diễn ăn điểm — **nhưng chỉ khi `RT-01` đã xong**. Nếu chưa xong mà mời, đó là tự sát.
+
+**Việc phải làm trước khi bảo vệ.** `RT-01`, P0, bắt buộc, không có ngoại lệ.
+
+---
+
+### Q5 — "Chi phí vận hành năm thứ 3 đến năm thứ 5 là bao nhiêu? Ai trả?"
+
+**Vì sao hiểm.** Kịch bản demo tự nhận định: *"Nhà thầu nào không trả lời được câu này thường bị loại"* (`docs/05:47`) — đánh giá này đúng. Đơn vị sự nghiệp công lập bị ám ảnh bởi chi phí sau khi vốn đầu tư hết: năm 1–2 còn bảo hành, năm 3 trở đi phải xin ngân sách thường xuyên, và xin không được thì hệ thống chết.
+
+**Đội mình trả lời được không: Một phần.** Kịch bản chỉ dẫn *"Mở thẳng bảng Chương 16 (thuyết minh kỹ thuật)"* (`docs/05:47`) — có bảng là tốt. Nhưng câu hỏi thật hiểm hơn: chi phí **tăng theo dung lượng dữ liệu**. Dữ liệu 3D và Gaussian splat tăng rất nhanh (`app/src/data/objects/structures.ts:29` ghi 11,2 triệu gaussian cho riêng Khuê Văn Các; `app/src/data/uploads.ts:5` có tệp splat 3,1 GB). Số hóa hết di tích thì dung lượng gấp nhiều lần, và chi phí lưu trữ + sao lưu ngoài site tăng theo.
+
+**Câu trả lời tốt nhất có thể đưa ra.**
+> *"Chúng tôi tách chi phí thành hai phần để Trung tâm chủ động được, thưa hội đồng. Phần cố định — bảo trì phần mềm, cập nhật bảo mật, hỗ trợ người dùng — là con số phẳng, có trong bảng Chương 16. Phần biến đổi là lưu trữ, tăng theo khối lượng số hóa, và chúng tôi đưa công thức chứ không đưa một con số, để Trung tâm tự tính được với bất kỳ kịch bản mở rộng nào: mỗi TB dữ liệu tăng thêm kéo theo chi phí lưu trữ chính, lưu trữ sao lưu và băng thông. Điểm quan trọng: hệ thống thiết kế theo tầng lưu trữ nóng–nguội, dữ liệu gốc ít truy cập đưa xuống tầng nguội chi phí thấp, nên chi phí không tăng tuyến tính theo tổng dung lượng mà theo lượng dữ liệu thường xuyên truy cập. Và vì hệ thống không dùng phần mềm thương mại có phí thuê bao theo năm, Trung tâm không bị khóa vào một hóa đơn bản quyền tăng hằng năm."*
+
+Câu cuối là **luận điểm phòng thủ mạnh nhất trước Preservica/Axiell/TMS** — xem mục 4.
+
+**Việc phải làm trước khi bảo vệ.** Rà lại Chương 16 `docs/01` xem đã có công thức chi phí theo TB chưa; nếu chỉ có con số phẳng, bổ sung công thức. Xem `RT-09`.
+
+---
+
+### Q6 — "Sau bàn giao, đội IT của Trung tâm có mấy người, và họ có vận hành nổi không?"
+
+**Vì sao hiểm.** Đây là câu hỏi mà hội đồng hỏi **để tự bảo vệ mình**, không phải để bắt bẻ nhà thầu. Một Trung tâm hoạt động văn hóa khoa học thường không có phòng CNTT chuyên trách. Kịch bản đã chuẩn bị: *"Đề xuất 1 quản trị hệ thống kiêm nhiệm của Trung tâm và 1 cán bộ đầu mối dữ liệu"* (`docs/05:44`) — nhưng "kiêm nhiệm" là điểm yếu tự khai: người kiêm nhiệm sẽ ưu tiên việc chính, và hệ thống mất người trực trong 6 tháng là hỏng.
+
+**Đội mình trả lời được không: Một phần.**
+
+**Câu trả lời tốt nhất có thể đưa ra.**
+> *"Chúng tôi thiết kế để hệ thống không cần đội IT chuyên trách, vì biết Trung tâm không có. Ba việc cụ thể: một, mọi thao tác quản trị thường ngày — thêm người dùng, phân quyền, cấu hình kết nối, xem nhật ký, sao lưu — làm được hoàn toàn qua giao diện, không cần gõ lệnh, không cần sửa file cấu hình; hội đồng vừa thấy điều đó ở màn Kết nối. Hai, những việc cần chuyên môn kỹ thuật sâu — vá bảo mật hệ điều hành, nâng cấp phiên bản, khôi phục sau sự cố lớn — nằm trong hợp đồng bảo trì, không đẩy sang Trung tâm. Ba, chúng tôi đào tạo theo vai chứ không đào tạo chung: cán bộ nhập liệu học đúng phần của họ, người phê duyệt học đúng phần của họ, quản trị học phần quản trị — kèm tài liệu hướng dẫn có ảnh chụp màn hình cho từng vai, để người mới vào tự học được mà không cần gọi nhà thầu."*
+
+**Việc phải làm trước khi bảo vệ.** Kiểm tra `docs/14-van-hanh-va-ban-giao.md` xem kế hoạch đào tạo đã tách theo vai chưa và đã có tài liệu hướng dẫn người dùng cuối chưa. Nếu chưa có tài liệu người dùng cuối, đó là khoảng trống hội đồng sẽ hỏi. Xem `RT-10`.
+
+---
+
+### Q7 — "Các ông nói không mất dữ liệu. Chứng minh đi."
+
+**Vì sao hiểm.** Kịch bản chuẩn bị câu *"RPO 24 giờ, RTO 4 giờ, sao lưu 3-2-1, bản sao ngoài site, diễn tập phục hồi hằng năm có biên bản"* (`docs/05:43`) — đây là câu trả lời **đúng chuẩn và tốt hơn mặt bằng**. Nhưng một hội đồng có người từng làm lưu trữ sẽ hỏi tiếp: *"Diễn tập hằng năm — các ông đã diễn tập lần nào chưa?"* Và câu trả lời trung thực là chưa, vì hệ thống chưa vận hành.
+
+Hiểm hơn nữa: hội đồng am hiểu sẽ phân biệt **sao lưu** (backup) với **bảo quản số** (digital preservation). Sao lưu bảo vệ khỏi mất tệp. Bảo quản số bảo vệ khỏi **hỏng âm thầm (bit rot)** và **lỗi thời định dạng** — hai thứ giết dữ liệu di sản trong 20 năm. Đây chính là chỗ Archivematica/Preservica mạnh hơn hẳn.
+
+**Đội mình trả lời được không: Một phần.** Hồ sơ có `docs/02-quy-trình-bao-quan-sao-luu.md`, có OAIS trong `docs/03:63`, có chính sách bản dẫn xuất bảo hiểm PLY/E57 cho splat (`docs/03:27`, `app/src/data/digitization.ts:390` — đoạn này viết rất tốt). Nhưng **không có mã kiểm tra toàn vẹn nào được tính thật** (G13).
+
+**Câu trả lời tốt nhất có thể đưa ra.**
+> *"Chúng tôi phân biệt hai rủi ro khác nhau, thưa hội đồng. Rủi ro mất tệp: xử lý bằng sao lưu ba bản, hai loại phương tiện, một bản ở nơi khác; mục tiêu mất tối đa 24 giờ dữ liệu, khôi phục trong 4 giờ; và chúng tôi cam kết diễn tập phục hồi có biên bản — lần đầu tiên trong vòng 3 tháng sau khi vận hành, không đợi hết năm. Rủi ro thứ hai nguy hiểm hơn và ít người nhắc: tệp vẫn còn nhưng hỏng âm thầm, hoặc định dạng không còn phần mềm nào đọc được sau 15 năm. Với rủi ro này, hệ thống tính mã kiểm tra toàn vẹn cho từng tệp và quét lại định kỳ theo lịch, phát hiện sai lệch là báo động và phục hồi từ bản sao. Riêng dữ liệu Gaussian splat — công nghệ mới công bố năm 2023, chưa có chuẩn quốc tế — chúng tôi bắt buộc lưu kèm một bản đám mây điểm PLY hoặc E57, và bản này không bao giờ bị xóa, kể cả khi bản splat còn nguyên. Đó là bản bảo hiểm để 20 năm sau, nếu không còn công cụ đọc `.splat`, nội dung vẫn phục hồi được."*
+
+Đoạn cuối là **đoạn hay nhất của hồ sơ về mặt chuyên môn bảo quản** — nó có sẵn trong code tại `app/src/data/digitization.ts:390`, viết đúng nghiệp vụ, và chuyên gia bảo tàng quốc tế sẽ ghi nhận. Phải đưa nó lên thành điểm nhấn chứ không để nằm im trong một chuỗi ký tự.
+
+**Việc phải làm trước khi bảo vệ.** Không được nói "hệ thống tính mã kiểm tra toàn vẹn" nếu chưa có — đổi thành thì tương lai ("hệ thống sẽ tính…") hoặc làm `RT-04`. Xem `RT-04`, `RT-11`.
+
+---
+
+### Q8 — "Vì sao không mua một sản phẩm đã có tên tuổi quốc tế cho rẻ và an toàn?"
+
+**Vì sao hiểm.** Đây là câu hỏi chiến lược, và nếu trong hội đồng có người từng đi hội thảo bảo tàng quốc tế thì câu này chắc chắn được hỏi. Nhà thầu cạnh tranh chào CollectiveAccess/Islandora/Preservica sẽ dựng sẵn câu này cho hội đồng.
+
+**Đội mình trả lời được không: Một phần.** Hồ sơ có lập luận về chuẩn quốc tế và pháp lý Việt Nam rải rác, nhưng tôi **không tìm thấy một mục so sánh với sản phẩm sẵn có** trong `docs/01` hay `docs/10`. Thiếu mục này là thiếu một lá chắn.
+
+**Câu trả lời tốt nhất có thể đưa ra.** Xem đầy đủ ở mục 4; tóm tắt 20 giây:
+> *"Chúng tôi tôn trọng các sản phẩm đó và học từ chuẩn của họ — OAIS, PREMIS, CIDOC-CRM đều nằm trong thiết kế này. Nhưng ba việc chúng không làm được cho Trung tâm: một, không sản phẩm nào trong số đó có sẵn nghiệp vụ tuân thủ pháp luật Việt Nam 2025 — thông báo sự cố dữ liệu cá nhân trong 72 giờ, hồ sơ DPIA, danh mục dữ liệu mở gửi Bộ Công an, kết nối qua trục LGSP; những thứ này phải làm thêm, và làm thêm trên phần mềm nước ngoài đắt hơn làm mới. Hai, không sản phẩm nào có trường Hán Nôm ba lớp nguyên văn – phiên âm – dịch nghĩa như nghiệp vụ văn bia đòi hỏi. Ba, giao diện tiếng Việt cho cán bộ nghiệp vụ không phải bản dịch máy mà là thiết kế theo đúng quy trình làm việc của Trung tâm. Đổi lại, chúng tôi thừa nhận điểm mạnh của họ và không né: họ có bề dày triển khai mà chúng tôi chưa có, và đó là lý do chúng tôi đề xuất ký quỹ mã nguồn và bàn giao dữ liệu ở định dạng chuẩn mở — để Trung tâm không bị kẹt nếu muốn đổi sang hệ khác."*
+
+**Việc phải làm trước khi bảo vệ.** Viết một mục so sánh vào `docs/01` hoặc phụ lục riêng. Xem `RT-12`.
+
+---
+
+### Q9 — "Số hóa hết di tích thì hệ thống có chịu nổi không?"
+
+**Vì sao hiểm.** Kịch bản đã chuẩn bị một phần qua câu *"kiến trúc hệ thống không giới hạn số bản ghi"* (`docs/05:45`). Nhưng câu này **nói quá và dễ bị bắt bẻ** — mọi kiến trúc đều có giới hạn, và một hội đồng có người kỹ thuật sẽ hỏi lại: "không giới hạn là sao?". Rủi ro thật không nằm ở số bản ghi (150 hay 150.000 bản ghi metadata đều nhẹ) mà ở **dung lượng tệp 3D** và **băng thông khi nhiều người xem mô hình cùng lúc**.
+
+**Đội mình trả lời được không: Một phần** — trả lời được về kiến trúc, **không** trả lời được bằng số đo, vì chưa có backend để đo (`docs/16:32` tự nhận: *"Không phản ánh được hiệu năng, độ trễ mạng, hoặc hành vi đồng thời nhiều người dùng thật"*).
+
+**Câu trả lời tốt nhất có thể đưa ra.**
+> *"Xin phép tách làm hai, thưa hội đồng. Về số lượng bản ghi mô tả: đây là dữ liệu nhẹ, một cơ sở dữ liệu quan hệ thông thường xử lý hàng triệu bản ghi là bình thường, và toàn bộ danh mục hiện vật của Trung tâm còn cách xa ngưỡng đó rất nhiều — đây không phải rủi ro. Về dữ liệu 3D: đây mới là phần nặng, và chúng tôi không giấu. Riêng mô hình Khuê Văn Các đã 11,2 triệu điểm gaussian. Cách xử lý: tệp gốc không nằm trong cơ sở dữ liệu mà nằm trên kho lưu trữ đối tượng, mở rộng bằng cách thêm dung lượng chứ không phải thay hệ thống; và mỗi tệp gốc luôn có một bản tối ưu nhẹ hơn để phục vụ xem trên web, nên người dùng thường không tải bản gốc. Về con số cụ thể: chúng tôi chưa đo được vì đây là bản trình diễn chưa nối hạ tầng thật — chúng tôi đề xuất đưa kiểm thử tải vào điều kiện nghiệm thu, với chỉ tiêu do Trung tâm chốt, thay vì đưa ra một con số bây giờ mà không có căn cứ."*
+
+Câu cuối — **từ chối bịa số và đề xuất đưa vào nghiệm thu** — là câu ăn điểm với hội đồng nghiêm túc, và là chỗ hồ sơ này có thể tỏ ra chuyên nghiệp hơn nhà thầu chào số đẹp.
+
+**Việc phải làm trước khi bảo vệ.** Sửa câu *"kiến trúc hệ thống không giới hạn số bản ghi"* trong `docs/05:45` thành phát biểu có giới hạn rõ ràng. Xem `RT-05`.
+
+---
+
+### Q10 — "Dữ liệu này ở đâu ra?" (câu đã chuẩn bị)
+
+**Vì sao hiểm.** Đã có trong danh sách (`docs/05:42`) và câu trả lời đã soạn **rất tốt** — nêu rõ là dữ liệu trình diễn, có phụ lục đối chiếu, sẽ thẩm định lại. Rủi ro còn lại nằm ở **nguồn đối chiếu**: `docs/04:3` liệt kê nguồn theo thứ tự *"Wikipedia tiếng Việt, cổng thông tin Cục Di sản văn hóa…"*.
+
+**Đặt Wikipedia ở vị trí đầu tiên trong một tài liệu nộp thầu là một sơ hở không đáng có.** Một thành viên hội đồng là chuyên gia di sản chỉ cần đọc dòng đó là có cớ chất vấn toàn bộ Phụ lục PL8, kể cả những mục đối chiếu đúng.
+
+**Đội mình trả lời được không: Có** — nhưng nên sửa tài liệu để không bị hỏi.
+
+**Câu trả lời tốt nhất có thể đưa ra.**
+> *"Bộ dữ liệu trình diễn khoảng 150 tài sản, sinh từ danh mục hiện vật thật của Trung tâm. Nguồn đối chiếu chính là cổng thông tin Cục Di sản văn hóa, Sở Văn hóa và Thể thao Hà Nội, và hồ sơ xếp hạng di tích theo Quyết định 548/QĐ-TTg. Trong quá trình đối chiếu chúng tôi đã tự phát hiện và hiệu đính 8 nhóm sai sót — chẳng hạn ban đầu ghi tượng Khổng Tử thờ ở nhà Thái Học, thực tế thờ tại điện Đại Thành; hoặc ghi long sàng là hiện vật của Văn Miếu, thực tế thuộc đền vua Đinh ở Hoa Lư và chúng tôi đã loại khỏi danh mục. Toàn bộ ghi trong Phụ lục PL8. Và nguyên tắc xuyên suốt: nhà thầu không tự đặt niên đại, vị trí hay danh tính hiện vật — mọi bản ghi phải qua cán bộ chuyên môn Trung tâm ký xác nhận trước khi xuất bản."*
+
+Việc **chủ động kể ra sai sót đã tự sửa** (`docs/04:44-52`) là đòn phủ đầu mạnh — nó chứng minh có quy trình thẩm định thật, và làm hội đồng khó chất vấn tiếp.
+
+**Việc phải làm trước khi bảo vệ.** Sửa `docs/04:3`: bỏ Wikipedia khỏi vị trí đầu, hoặc chuyển thành *"tra cứu sơ bộ, sau đó đối chiếu lại với…"*. Xem `RT-03`.
+
+---
+
+### Q11 — "82 bia Tiến sĩ là Ký ức Thế giới UNESCO. Việc số hóa và công bố có phải xin phép ai không?"
+
+**Vì sao hiểm.** Đây là câu hỏi mà chỉ chuyên gia di sản hỏi, và nếu đội mình trả lời trôi chảy thì ghi điểm rất lớn với đúng người có tiếng nói nhất trong hội đồng. Điểm hiểm: chính hồ sơ đã viện dẫn `docs/03:53` — NĐ 308/2025/NĐ-CP Điều 87, chuyển đổi văn bản giấy sang thông điệp dữ liệu đối với di sản thuộc danh mục UNESCO/di tích quốc gia đặc biệt/bảo vật quốc gia **cần ý kiến bằng văn bản của Bộ VHTTDL** — *"áp dụng trực tiếp cho 82 bia Tiến sĩ"*. Tức là hồ sơ **biết** có nghĩa vụ này. Câu hỏi tiếp theo tất yếu: "Vậy đã có văn bản đó chưa? Ai xin?"
+
+**Đội mình trả lời được không: Một phần.** Nghĩa vụ đã được nhận diện (điểm cộng lớn), nhưng tôi không thấy trong `docs/16` mục 5 (phụ thuộc bên ngoài) có mục "xin ý kiến Bộ VHTTDL cho việc số hóa 82 bia" — trong khi mục 5 đã liệt kê 4 phụ thuộc khác. Đây là **thiếu sót trong chính danh sách phụ thuộc**.
+
+**Câu trả lời tốt nhất có thể đưa ra.**
+> *"Có, thưa hội đồng, và chúng tôi đã đưa vào hồ sơ. Nghị định 308/2025 Điều 87 quy định việc chuyển đổi tư liệu di sản thuộc danh mục UNESCO sang dạng số cần ý kiến bằng văn bản của Bộ Văn hóa, Thể thao và Du lịch — điều này áp dụng trực tiếp cho 82 bia Tiến sĩ. Đây là thủ tục thuộc thẩm quyền của Trung tâm với tư cách đơn vị quản lý di tích, nhà thầu không thay thế được; chúng tôi đưa nó thành một đầu việc có người chịu trách nhiệm và mốc thời gian trong giai đoạn khởi động, để không phát hiện muộn khi đã số hóa xong. Về mặt hệ thống, chúng tôi hỗ trợ bằng cách: dữ liệu chưa có ý kiến chấp thuận thì giữ ở trạng thái nội bộ, không xuất bản ra ngoài được — hệ thống chặn bằng quy trình duyệt chứ không dựa vào việc cán bộ nhớ."*
+
+Câu cuối biến một nghĩa vụ pháp lý thành **một tính năng của sản phẩm** — đó là cách trả lời tốt nhất có thể.
+
+**Việc phải làm trước khi bảo vệ.** Thêm mục 5.5 vào `docs/16` về nghĩa vụ xin ý kiến Bộ VHTTDL. Xem `RT-13`.
+
+---
+
+### Q12 — "Nhật ký các ông nói 'không sửa được'. Chứng minh không sửa được đi."
+
+**Vì sao hiểm.** Kịch bản dạy nói câu này ở phút 8:45: *"Mọi thao tác đều lưu vết, không sửa được, xuất ra được để phục vụ thanh tra"* (`docs/05:32`). Với hội đồng có người làm thanh tra hoặc kiểm toán, "không sửa được" là một tuyên bố kỹ thuật cụ thể, không phải lời nói suông — nó đòi hỏi cơ chế như chuỗi băm nối tiếp, lưu trữ WORM, hoặc ký số từng bản ghi.
+
+**Đội mình trả lời được không: Không.** Grep `app/src/services/mock/auditService.ts` (39 dòng) và `app/src/pages/AuditLogPage.tsx` cho `append`, `immutable`, `WORM`, `hash` → **0 kết quả**. ADR `docs/adr/0012-nhat-ky-append-only-thoi-han-luu-theo-cap-do-attt.md` đặt ra nguyên tắc nhưng chưa có hiện thực. Trong một ứng dụng chạy hoàn toàn trên trình duyệt, nhật ký nằm trong bộ nhớ JavaScript — **sửa được bằng console trong 5 giây**.
+
+**Câu trả lời tốt nhất có thể đưa ra** (đổi cách nói, không nói "không sửa được" ở bản demo):
+> *"Nguyên tắc thiết kế là nhật ký chỉ ghi thêm, không cho sửa và không cho xóa — kể cả tài khoản quản trị cao nhất cũng không có nút xóa nhật ký, đó là điều kiện để nhật ký có giá trị trước thanh tra. Khi vận hành thật, tính bất biến được bảo đảm bằng ba lớp: quyền ghi-thêm ở tầng cơ sở dữ liệu, chuỗi mã kiểm tra nối tiếp giữa các bản ghi để phát hiện mọi can thiệp, và bản sao nhật ký đẩy sang kho lưu trữ chỉ-ghi tách khỏi hệ thống chính. Thời hạn lưu tối thiểu 12 tháng theo Nghị định 53/2022 Điều 27, và hệ thống cấu hình được dài hơn theo cấp độ an toàn được phê duyệt. Ở bản trình diễn hôm nay, phần hội đồng thấy là giao diện và cấu trúc dữ liệu của nhật ký; cơ chế bất biến nằm ở tầng máy chủ, sẽ nghiệm thu được khi triển khai."*
+
+Câu cuối — **tự phân định cái gì đang trình diễn, cái gì thuộc tầng máy chủ** — giữ được uy tín mà không nói sai.
+
+**Việc phải làm trước khi bảo vệ.** Sửa thoại `docs/05:32`, bỏ cụm "không sửa được" ở thì hiện tại. Xem `RT-05`.
+
+---
+
+### Q13 — "Trong lúc chờ Bộ ban hành đặc tả metadata quốc gia, các ông làm sao?"
+
+**Vì sao hiểm.** Câu này nhìn như câu hỏi kỹ thuật nhưng thật ra là **cái bẫy về rủi ro đầu tư**: nếu Bộ ban hành chuẩn khác với thiết kế của nhà thầu, Trung tâm có phải trả tiền làm lại không?
+
+**Đội mình trả lời được không: Có.** Đây là chỗ hồ sơ chuẩn bị tốt. `docs/16:162-169` nhận diện chính xác rằng Bộ VHTTDL **chưa ban hành** đặc tả, viện dẫn đúng Điều 85 NĐ 308/2025/NĐ-CP giao nhiệm vụ xây dựng bộ tiêu chuẩn, và nêu giải pháp lớp ánh xạ tách biệt khỏi lõi nghiệp vụ.
+
+**Câu trả lời tốt nhất có thể đưa ra.**
+> *"Tính đến nay Bộ chưa ban hành đặc tả riêng — Điều 85 Nghị định 308/2025 mới giao nhiệm vụ xây dựng bộ tiêu chuẩn này. Chúng tôi không chờ, và cũng không tự đặt ra chuẩn riêng. Hệ thống dùng nền chuẩn quốc tế đã ổn định — Dublin Core cho lõi mô tả, CIDOC-CRM cho quan hệ hiện vật, OAIS cho lưu trữ dài hạn, PREMIS cho sự kiện bảo quản — đây đều là những chuẩn mà bộ tiêu chuẩn quốc gia nhiều khả năng sẽ tham chiếu. Quan trọng hơn: chúng tôi tách riêng một lớp ánh xạ dữ liệu khỏi lõi nghiệp vụ, nên khi Bộ ban hành đặc tả chính thức, việc điều chỉnh nằm ở lớp ánh xạ, không phải đập đi làm lại cấu trúc dữ liệu. Và chúng tôi đưa cam kết hỗ trợ điều chỉnh này vào hợp đồng bảo trì, để Trung tâm không phải trả thêm cho một thay đổi ngoài tầm kiểm soát của mình."*
+
+**Việc phải làm trước khi bảo vệ.** Không có — chỉ cần thuộc. Đây là câu hồ sơ đã sẵn sàng.
+
+---
+
+### Q14 — "Các ông có mấy người? Đã làm dự án nào tương tự chưa?"
+
+**Vì sao hiểm.** Câu hỏi năng lực nhà thầu, thường nằm ở hồ sơ pháp lý chứ không ở phần kỹ thuật, nhưng hội đồng hay hỏi lại trực tiếp sau khi xem demo — đặc biệt khi demo tốt hơn kỳ vọng ("làm được thế này thì đội bao nhiêu người?"). Với hồ sơ này, câu trả lời trung thực có rủi ro: sản phẩm hiện là bản trình diễn 14.768 dòng mã, một tệp kiểm thử, chưa có backend.
+
+**Đội mình trả lời được không: Không đánh giá được** — tôi không có dữ liệu về nhân sự và kinh nghiệm nhà thầu trong repo này, và **không bịa**. Đây là phần chủ đầu tư/nhà thầu phải tự chuẩn bị ngoài phạm vi kỹ thuật.
+
+**Câu trả lời tốt nhất có thể đưa ra.** Nguyên tắc: đừng so bề dày với đối thủ quốc tế, hãy so **mức độ hiểu bài toán**. Chỉ vào những thứ kiểm chứng được ngay trong hồ sơ: 8 nhóm sai sót di sản tự phát hiện và hiệu đính (`docs/04:44-52`), tài liệu hạn chế đã biết công bố công khai (`docs/16`), kỷ luật chỉ trích dẫn văn bản đã xác minh (`docs/03:13`), và việc phát hiện NĐ 47/2020 đã bị bãi bỏ (`docs/03:91`). Đó là bằng chứng về **cách làm việc**, thứ mà một nhà thầu lớn nhưng làm ẩu không có.
+
+**Việc phải làm trước khi bảo vệ.** Chuẩn bị 3 slide năng lực với bằng chứng kiểm chứng được; tránh mọi tuyên bố kinh nghiệm không dẫn được nguồn.
+
+---
+
+### Bảng tổng hợp mức độ sẵn sàng trả lời
+
+| Câu | Chủ đề | Trả lời được? | Rủi ro nếu bị hỏi mà chưa vá |
+|---|---|---|---|
+| Q1 | Nhà thầu biến mất / escrow | Một phần | Cao — thiếu cơ chế escrow trong hồ sơ |
+| Q2 | Ai giữ khóa mã hóa | **Không** | Cao — không có mục quản lý khóa |
+| Q3 | Bản quyền / quyền nhân thân Hán Nôm | Một phần | Trung bình — có Rights statement, thiếu tác giả bản dịch |
+| Q4 | Dữ liệu ra nước ngoài | **Không** (trước `RT-01`) | **Rất cao** — câu trả lời đã soạn đang sai |
+| Q5 | Chi phí vận hành năm 3–5 | Một phần | Cao — có bảng, thiếu công thức theo TB |
+| Q6 | Năng lực IT sau bàn giao | Một phần | Trung bình |
+| Q7 | Bảo đảm không mất dữ liệu | Một phần | Cao — nói "tính checksum" mà chưa có |
+| Q8 | Vì sao không mua sản phẩm quốc tế | Một phần | Cao — thiếu hẳn mục so sánh |
+| Q9 | Mở rộng khi số hóa hết di tích | Một phần | Trung bình — do câu "không giới hạn" nói quá |
+| Q10 | Dữ liệu ở đâu ra | **Có** | Thấp — chỉ cần sửa nguồn Wikipedia |
+| Q11 | Nghĩa vụ UNESCO / ý kiến Bộ VHTTDL | Một phần | Trung bình — đã nhận diện, chưa vào danh sách phụ thuộc |
+| Q12 | Nhật ký "không sửa được" | **Không** | Cao — tuyên bố kỹ thuật không có cơ chế |
+| Q13 | Chờ đặc tả metadata quốc gia | **Có** | Thấp — hồ sơ đã sẵn sàng |
+| Q14 | Năng lực nhà thầu | Ngoài phạm vi audit | — |
+
+---
+
+## 4. Hướng 3: So sánh với sản phẩm đối thủ
+
+**Cảnh báo về độ tin cậy của mục này:** tôi mô tả các sản phẩm dưới đây theo hiểu biết chung về thị trường phần mềm quản lý sưu tập và bảo quản số. Tôi **không truy cập được nguồn kiểm chứng trực tuyến trong phiên làm việc này**, nên mọi chi tiết về tính năng cụ thể, giá, và danh sách khách hàng đều gắn nhãn *(cần kiểm chứng)*. Trước khi dùng bất kỳ dòng nào trong bảng này để đối đáp trước hội đồng, **phải kiểm chứng lại** — nói sai về sản phẩm của đối thủ là cách nhanh nhất để mất uy tín, và đối thủ thì luôn biết rõ sản phẩm của họ hơn mình.
+
+### 4.1. Bảng so sánh
+
+| Tiêu chí | Hồ sơ này (tự phát triển) | CollectiveAccess | Islandora | Archivematica | Preservica | Axiell / TMS |
+|---|---|---|---|---|---|---|
+| Mô hình | Tự phát triển riêng, mã nguồn thuộc chủ đầu tư | Mã nguồn mở *(cần kiểm chứng giấy phép cụ thể)* | Mã nguồn mở (Drupal + Fedora) *(cần kiểm chứng phiên bản hiện hành)* | Mã nguồn mở, chuyên bảo quản số theo OAIS | Thương mại, thuê bao *(cần kiểm chứng mô hình giá)* | Thương mại, bản quyền theo chỗ ngồi *(cần kiểm chứng)* |
+| Bề dày triển khai bảo tàng quốc tế | **Không có** — sản phẩm mới | Có, nhiều năm | Có, mạnh ở thư viện/đại học | Có, mạnh ở lưu trữ quốc gia | Có, mạnh ở lưu trữ chính phủ | **Rất mạnh** — TMS phổ biến ở bảo tàng nghệ thuật lớn |
+| Cộng đồng / thị trường nhân lực | **Không có** | Có cộng đồng | Có cộng đồng Drupal rộng | Có cộng đồng lưu trữ | Nhà cung cấp hỗ trợ | Nhà cung cấp hỗ trợ |
+| Bảo quản số thật (fixity, chuẩn hóa định dạng, PREMIS event) | **Chưa hiện thực** — mới ở mức thiết kế; không có mã băm nào được tính (`app/src/` grep `crypto`/`createHash` → 0) | Một phần | Một phần | **Điểm mạnh nhất của họ** | **Điểm mạnh nhất của họ** | Một phần |
+| Chuẩn metadata quốc tế | Thiết kế theo Dublin Core / CIDOC-CRM / OAIS / PREMIS (`docs/03:27,36,45,54,63`) | Mạnh, cấu hình sâu | Mạnh | Mạnh về PREMIS | Mạnh | Mạnh |
+| Trường Hán Nôm 3 lớp (nguyên văn / phiên âm / dịch nghĩa) | **Có trong thiết kế** (`docs/03:52`), nhãn đã có trong giao diện (`app/src/i18n/vi.ts:104,106,108`) — nhưng **dữ liệu chưa có nội dung nào** | Làm được bằng cấu hình *(cần kiểm chứng mức độ)* | Làm được bằng cấu hình | Không phải phạm vi | Không phải phạm vi | Làm được bằng trường tùy biến *(cần kiểm chứng)* |
+| Nghiệp vụ tuân thủ pháp luật VN 2025 (DPIA, sự cố 72h, danh mục dữ liệu mở, đánh giá rủi ro hằng năm) | **Có thiết kế riêng** — B8 với 8 tab, ánh xạ từng nghĩa vụ D1–D10 (`docs/03:91-100`) | Không có sẵn | Không có sẵn | Không có sẵn | Không có sẵn | Không có sẵn |
+| Kết nối trục LGSP / NĐ 278/2025 | Có thiết kế (`docs/03:80`, màn C5) | Không có sẵn | Không có sẵn | Không có sẵn | Không có sẵn | Không có sẵn |
+| Giao diện tiếng Việt cho cán bộ nghiệp vụ | Thiết kế gốc bằng tiếng Việt, 233 dòng chuỗi (`app/src/i18n/vi.ts`) | Cần Việt hóa | Cần Việt hóa | Cần Việt hóa | Cần Việt hóa | Cần Việt hóa |
+| Hỗ trợ Gaussian splat | **Chưa có** trong app (Đòn 2); có chính sách bảo quản tốt (`app/src/data/digitization.ts:390`) | Không có sẵn *(cần kiểm chứng)* | Không có sẵn *(cần kiểm chứng)* | Không phải phạm vi | Không phải phạm vi | Không có sẵn *(cần kiểm chứng)* |
+| Chi phí bản quyền năm 3–5 | Không có phí bản quyền phần mềm | Không có phí bản quyền | Không có phí bản quyền | Không có phí bản quyền | **Có, định kỳ** | **Có, định kỳ** |
+| Rủi ro phụ thuộc một nhà thầu | **Rất cao** — không escrow, không cộng đồng | Thấp | Thấp | Thấp | Trung bình (phụ thuộc nhà cung cấp) | Trung bình |
+| Chín muồi ở thời điểm hiện tại | **Bản trình diễn, không backend, 1 tệp kiểm thử** | Sản phẩm chín | Sản phẩm chín | Sản phẩm chín | Sản phẩm chín | Sản phẩm chín |
+
+### 4.2. Nói thật: hồ sơ này thua ở đâu
+
+Nếu tôi là nhà thầu cạnh tranh chào Islandora hoặc Archivematica, tôi sẽ đánh đúng bốn điểm sau và không đánh chỗ khác:
+
+1. **Chín muồi.** Đối thủ giao một sản phẩm đã chạy ở nhiều bảo tàng; hồ sơ này giao một bản trình diễn chưa có backend (`docs/16:27-34`), một tệp kiểm thử tự động (`docs/11:537`), và 14.768 dòng mã. Khoảng cách từ đây tới hệ thống vận hành là toàn bộ dự án, chưa phải phần còn lại của dự án.
+
+2. **Bảo quản số mới ở mức thiết kế, chưa ở mức mã.** Đây là điểm tôi đánh mạnh nhất nếu chào Archivematica: hồ sơ nói về OAIS, PREMIS, fixity rất trôi chảy (`docs/03:63`, `docs/01:209`) nhưng **không có một dòng mã nào tính mã băm** (grep `crypto`/`createHash`/`subtle.digest` trong `app/src/` → 0 kết quả). Trong khi đó Archivematica làm đúng việc đó là nghề chính. Với một hội đồng có chuyên gia lưu trữ, đây là chỗ chênh lệch lớn nhất.
+
+3. **Rủi ro nhà thầu đơn nhất.** Không cộng đồng, không nhà thầu thứ hai, không escrow trong hồ sơ. Chọn sản phẩm mã nguồn mở nghĩa là nếu nhà thầu A hỏng, thuê được nhà thầu B; chọn hồ sơ này thì không.
+
+4. **Không có bằng chứng vận hành thật.** Đối thủ đưa được danh sách khách hàng và thư giới thiệu; hồ sơ này chưa có gì tương đương *(trong phạm vi tài liệu tôi đọc được)*.
+
+### 4.3. Năm luận điểm phòng thủ có sức nặng
+
+Tôi xếp theo sức nặng giảm dần. Ba luận điểm đầu là thứ thực sự thắng được; hai luận điểm sau là bổ trợ.
+
+**Luận điểm 1 — Khoảng cách tuân thủ pháp luật Việt Nam 2025 là khoảng cách không sản phẩm quốc tế nào lấp sẵn, và lấp nó trên phần mềm nước ngoài đắt hơn làm mới.**
+
+Đây là luận điểm mạnh nhất, và nó **có bằng chứng cụ thể trong hồ sơ**: `docs/03:91-100` ánh xạ mười nghĩa vụ pháp lý D1–D10 vào từng màn hình, mỗi nghĩa vụ có căn cứ điều khoản đã xác minh — DPIA theo mốc 60 ngày (`docs/03:93`), thông báo sự cố 72 giờ theo Điều 23 Luật BVDLCN 91/2025 (`docs/03:95`), danh mục dữ liệu mở gửi Bộ Công an theo NĐ 165/2025 Điều 10 (`docs/03:96`), đánh giá rủi ro hằng năm (`docs/03:97`), kiểm toán dữ liệu theo NĐ 278/2025 (`docs/03:98`).
+
+Cách nói trước hội đồng: *"Một hệ thống quản lý sưu tập quốc tế giải quyết rất tốt bài toán bảo tàng. Nhưng Trung tâm không chỉ là bảo tàng — Trung tâm là đơn vị sự nghiệp công lập chịu trách nhiệm trước pháp luật Việt Nam về dữ liệu. Mười nghĩa vụ trong bảng này không sản phẩm nào có sẵn, và thêm chúng vào một phần mềm đóng của nước ngoài thì hoặc không làm được, hoặc phải trả tiền tùy biến cho một nhà cung cấp ở múi giờ khác."*
+
+**Luận điểm 2 — Không phí bản quyền định kỳ, và dữ liệu ra được ở định dạng chuẩn mở.**
+
+Với đơn vị sự nghiệp, chi phí năm 3–5 là nỗi sợ lớn nhất (Q5). Phần mềm thương mại có phí thuê bao hoặc phí bảo trì bản quyền hằng năm; ngân sách thường xuyên không về là hệ thống ngừng hoạt động hoặc mất hỗ trợ. Luận điểm này chỉ có sức nặng nếu đi kèm cam kết xuất dữ liệu chuẩn mở (`RT-06`) — nếu không, nó thành con dao hai lưỡi, vì "không phí bản quyền nhưng khóa vào một nhà thầu" còn tệ hơn.
+
+**Luận điểm 3 — Chính sách bảo hiểm cho dữ liệu Gaussian splat cho thấy hiểu nghề bảo quản, không chỉ hiểu lập trình.**
+
+Đoạn văn tại `app/src/data/digitization.ts:390` là đoạn chuyên môn nhất trong toàn bộ sản phẩm: `.splat` chưa có chuẩn ISO/OGC chính thức, công nghệ 3DGS mới công bố 2023, nên bản đám mây điểm PLY/E57 đi kèm là dữ liệu **duy nhất** phục hồi được nội dung nếu công cụ đọc `.splat` ngừng được hỗ trợ; bản này lưu ở tầng AIP, tham gia lịch kiểm tra toàn vẹn định kỳ, **không bao giờ bị xóa** — khác hẳn bản tối ưu web vốn có thể xóa và tái sinh tự do.
+
+Đây là tư duy bảo quản đúng chuẩn quốc tế, áp dụng cho một công nghệ mà **chính các sản phẩm quốc tế trong bảng cũng chưa có chính sách sẵn**. Với chuyên gia bảo tàng trong hội đồng, đây là đoạn ăn điểm cao nhất của hồ sơ — và hiện nó đang nằm chôn trong một chuỗi ký tự trong mã nguồn. Phải đưa lên thuyết minh và lên miệng người trình diễn.
+
+**Luận điểm 4 — Thiết kế theo đúng quy trình làm việc của Trung tâm, không phải bản dịch của quy trình nước ngoài.**
+
+Nguyên tắc bốn mắt (người tải lên không được tự duyệt), luồng "Trả lại bổ sung" có lý do bắt buộc, pipeline 9 trạng thái gồm cả "Đã gỡ/thu hồi" — đều đã hiện thực thật trong mã (`app/src/services/mock/assetService.ts:29,31`; `app/src/pages/AssetDetailPage.tsx:158,166,320,325`). Kịch bản demo nhận định đúng rằng *"Hội đồng nhà nước quan tâm luồng trả lại hơn luồng thuận, vì đó là thực tế công việc của họ"* (`docs/05:28`) — đây là hiểu biết về người dùng mà một sản phẩm quốc tế nhập về không có sẵn.
+
+**Luận điểm 5 — Học chuẩn của họ, không cạnh tranh với họ.**
+
+Cách xử lý khôn ngoan nhất khi bị hỏi Q8 là **không dìm đối thủ**. Nói: *"Chúng tôi dùng đúng những chuẩn mà các hệ thống đó dùng — OAIS, PREMIS, CIDOC-CRM, Dublin Core — chính vì thế dữ liệu của Trung tâm sau này chuyển sang bất kỳ hệ nào trong số đó cũng được, không mất mát."* Câu này biến điểm yếu (chưa có bề dày) thành cam kết (không khóa chân chủ đầu tư), và làm hội đồng thấy nhà thầu tự tin chứ không phòng thủ.
+
+---
+
+## 5. Hướng 4: Rủi ro vỡ demo + sai sự thật còn sót
+
+### 5.1. Bản đồ điểm vỡ theo từng phút của kịch bản
+
+| Phút | Nội dung theo `docs/05` | Điểm vỡ | Bằng chứng | Mức |
+|---|---|---|---|---|
+| 0:20–1:00 | Đăng nhập, đổi vai | Hội đồng xin thử → gõ bừa `a`/`a` → **vào được**. Nếu người trình diễn dùng nút "Điền mã demo" cho OTP, hội đồng thấy mã tự điền và hiểu ngay đây là mô phỏng | `app/src/pages/LoginPage.tsx:102-106`, `:149-153` | **Cao** |
+| 1:00–1:45 | Tổng quan, **chủ động mời hội đồng bấm thử** | Badge phần trăm và sparkline là hằng số viết tay, nằm đúng trên 4 ô được mời bấm; ảnh hero tải từ Wikimedia → vỡ nếu mạng chập chờn | `app/src/data/dashboard.ts:71,73,84,86,96,98,108,110`; `app/src/pages/DashboardPage.tsx:15` | **Cao** |
+| 1:45–3:15 | Nhập dữ liệu theo lô | Đoạn này dựa trên tiến trình mô phỏng; rủi ro thấp nếu không hứa gì về tệp thật. **Không được nói "hệ thống từ chối tệp sai độ phân giải"** như một cơ chế kiểm tra thật nếu chỉ là dữ liệu dựng sẵn — cần xác minh lại `app/src/pages/UploadPage.tsx` trước khi nói | `docs/05:26` | Trung bình |
+| 3:15–4:45 | **Cao trào** — xem 3D/splat | Mô hình là khối hộp + hình cầu dựng thủ công, **giống hệt nhau cho mọi bia**; không có loader nào đọc được `.glb`/`.ply`. Nếu mở hai bia liên tiếp là lộ | `app/src/components/StelePreview.tsx:47,51-52,55-57,59`; `app/package.json` | **Rất cao** |
+| 4:45–5:45 | Duyệt & xuất bản, gõ lý do *"Đề nghị bổ sung phiên âm và dịch nghĩa minh văn"* | Luồng trả lại **có thật** (điểm mạnh). Nhưng nếu hội đồng đề nghị xem phần minh văn: **toàn bộ dữ liệu không có một chữ Hán Nôm nào** — xem 5.3 | `app/src/services/mock/assetService.ts:29`; grep CJK trong `app/src/` → 4 ký tự, đều trong placeholder | **Cao** |
+| 5:45–6:45 | Tìm kiếm, mời hội đồng gõ | **An toàn** — tìm kiếm bỏ dấu hai chiều là code thật, quét đủ trường | `app/src/utils/search.ts:10-18,21-33` | Thấp |
+| 6:45–7:45 | Báo cáo, **bấm Xuất Excel** | App in dòng "không tạo tệp tải xuống thật" ngay cạnh nút, trong khi kịch bản dặn "trình bày dứt khoát, không cần rào trước đón sau" | `app/src/pages/ReportsPage.tsx:311`, `:157-162`; `docs/05:30` | **Rất cao** |
+| 7:45–8:45 | Kết nối & chia sẻ | Căn cứ pháp lý dùng đúng (NĐ 278/2025, tránh NĐ 47/2020 đã bãi bỏ) — **điểm mạnh**. Rủi ro nhỏ: endpoint hiển thị là tên miền chưa tồn tại | `docs/05:31`; `app/src/data/connections.ts:26` | Thấp–TB |
+| 8:45–9:30 | An toàn & liên tục, nói *"không sửa được"* | Không có cơ chế bất biến nào trong mã; tuyên bố kỹ thuật không đỡ được nếu bị hỏi tiếp | `app/src/services/mock/auditService.ts` (39 dòng, grep `append`/`immutable`/`WORM` → 0) | **Cao** |
+| Xuyên suốt | Bài test "ngắt Wi-Fi, tải lại app" (`docs/05:67`) | **Sẽ thất bại**: mất font Google, vỡ ảnh hero + 6 ảnh bìa bộ sưu tập | `app/index.html:7,8,10`; `app/src/data/collections.ts:7,9,11,13,15,17` | **Rất cao** |
+
+### 5.2. Mâu thuẫn nội tại của dữ liệu mock khi bấm lung tung
+
+Kịch bản có một dòng tự bảo vệ rất đáng chú ý ở `docs/05:73`: *"Không mở thẻ bộ sưu tập hoặc bấm sâu vào bất kỳ số liệu nào chưa tự kiểm tra lại trong ngày demo, kể cả khi đã sửa trước đó — dữ liệu có thể bị ghi đè trong lúc phát triển."*
+
+Đây là một chỉ dẫn **tự mâu thuẫn với chiến lược demo**. Ở phút 1:00–1:45, kịch bản dạy **chủ động mời hội đồng bấm bất kỳ ô nào** (`docs/05:25`); ở checklist lại dặn **không bấm sâu vào bất kỳ số liệu nào**. Người trình diễn không thể làm cả hai. Trên sân khấu, mâu thuẫn này sẽ biểu hiện thành sự do dự — và hội đồng đọc được sự do dự.
+
+Về mặt kỹ thuật, nỗi lo ở `docs/05:73` **phần lớn đã được giải quyết** mà kịch bản chưa cập nhật: `app/src/data/selectors.ts:5-6` và `app/src/data/dashboard.ts:2-8` cho thấy các con số đã derive từ một mảng `ASSETS` duy nhất, nên chúng không thể tự mâu thuẫn nữa. Đây là chỗ nên **sửa kịch bản theo hướng tự tin hơn**, chứ không phải rào chắn thêm — trừ đúng bốn badge trend (Đòn 4) cần gỡ.
+
+### 5.3. Khoảng trống Hán Nôm — đòn của chuyên gia di sản
+
+Hồ sơ bán một năng lực chuyên môn quan trọng: trường Hán Nôm ba lớp *nguyên văn / phiên âm / dịch nghĩa* (`docs/03:52`), và câu chuyện demo ở phút 4:45–5:45 xoay quanh việc *"Đề nghị bổ sung phiên âm và dịch nghĩa minh văn"* (`docs/05:28`).
+
+Kiểm tra thực tế toàn bộ mã nguồn:
+
+- Grep ký tự Hán (khối CJK Unified Ideographs `U+4E00–U+9FFF`) trên toàn `app/src/` → **đúng 4 ký tự**, tất cả nằm ở một chỗ duy nhất: `app/src/i18n/vi.ts:105` — `originalTextPlaceholder: '影印原文…'`.
+- Nhãn trường có đủ: `app/src/i18n/vi.ts:104` (`'Nguyên văn chữ Hán/Nôm'`), `:106` (`'Phiên âm Hán Việt'`), `:108` (`'Dịch nghĩa'`).
+- Nhưng **không có bất kỳ bản ghi dữ liệu nào chứa nội dung minh văn** — không một chữ Hán nào trong `app/src/data/`.
+
+Hai hệ quả:
+
+1. **Đòn của chuyên gia.** Nếu trong hội đồng có người đọc được Hán Nôm — với một dự án về 82 bia Tiến sĩ thì khả năng này rất cao — họ sẽ mở một bản ghi bia và thấy ô "Nguyên văn chữ Hán/Nôm" trống rỗng trên toàn bộ dữ liệu. Câu hỏi: *"Hệ thống chuyên cho văn bia mà không có một chữ văn bia nào?"* Rất khó đỡ, vì đây không phải hạn chế kỹ thuật mà là hạn chế về nội dung — thứ mà hồ sơ đang lấy làm điểm mạnh chuyên môn.
+
+2. **Chi tiết nhỏ nhưng lộ nghề.** Bốn chữ Hán duy nhất trong toàn sản phẩm là `影印原文` dùng làm gợi ý nhập liệu. Cụm này nghĩa gần với *"bản in chụp lại nguyên văn"* (影印 = ảnh ấn, in chụp lại bản gốc) — nó mô tả **một phương pháp sao chụp tư liệu**, không phải một lời nhắc tự nhiên cho ô nhập "hãy gõ nguyên văn chữ Hán/Nôm vào đây". Với người đọc được chữ Hán, placeholder này đọc hơi lạc. Đây là chi tiết nhỏ, nhưng nó nằm ở đúng chỗ mà chuyên gia sẽ nhìn đầu tiên. *(Đánh giá về sắc thái ngữ nghĩa này nên được một người có chuyên môn Hán Nôm xác nhận lại trước khi sửa — cần kiểm chứng.)*
+
+**Việc phải làm:** nạp nội dung minh văn thật cho **ít nhất 2–3 bia** dùng trong kịch bản demo, đủ ba lớp, kèm nguồn phiên dịch và tên người thẩm định. Không cần làm cả 82 bia. Xem `RT-02`.
+
+### 5.4. Sai sự thật di sản còn sót — kết quả rà soát
+
+Tôi đối chiếu dữ liệu trong app với `docs/04-phu-luc-fact-di-san.md` và với các mốc lịch sử nền tảng. Kết quả **tốt hơn tôi dự đoán**:
+
+**Đã kiểm và ĐÚNG:**
+
+- `app/src/data/heritage.ts:6-11` — xếp hạng di tích quốc gia đặc biệt theo **QĐ 548/QĐ-TTg ngày 10/5/2012**: khớp đúng `docs/04:3` và `docs/05:23`.
+- `app/src/data/heritage.ts:14-21` — UNESCO Ký ức Thế giới: khu vực châu Á – Thái Bình Dương **2010**, toàn cầu **2011**; phạm vi gắn nhãn giới hạn đúng vào bộ sưu tập "Bia Tiến sĩ" (`:20`), không gắn tràn lan cho mọi tài sản. Đây là sự cẩn thận đáng ghi nhận — gắn nhãn UNESCO cho hiện vật không thuộc diện là lỗi mà chuyên gia bắt ngay.
+- `app/src/utils/canChi.ts:18-20` — công thức can chi chuẩn, hàm `mod` xử lý đúng số âm (`:12-14`). Tôi kiểm tay: 1442 → Nhâm Tuất (đúng), 1484 → Giáp Thìn (đúng), 1070 → Canh Tuất (đúng). `app/tests/canChi.test.ts` chạy **pass 3/3**, có cả bất biến chu kỳ 60 năm.
+- `docs/04:49` — ba lỗi can chi từng có trong dữ liệu (1463 Quý Mão→**Quý Mùi**, 1499 Kỷ Sửu→**Kỷ Mùi**, 1496 Bính Thân→**Bính Thìn**) đã được hiệu đính; tôi kiểm lại bằng công thức: cả ba giá trị hiệu đính đều **đúng**.
+- `docs/04:48` — loại long sàng khỏi danh mục vì thuộc đền vua Đinh Tiên Hoàng – vua Lê Đại Hành ở Hoa Lư, không thuộc Văn Miếu: đây là **loại lỗi nguy hiểm nhất** (gán nhầm hiện vật của di tích khác) và đội mình đã tự bắt được. Rất đáng ghi nhận.
+- `docs/04:44` — hiệu đính vị trí thờ Khổng Tử từ nhà Thái Học sang **điện Đại Thành**, và làm rõ nhà Thái Học thờ Chu Văn An cùng ba vị vua: đúng bố cục di tích.
+- `docs/04:45` — tượng Chu Văn An là **tượng đồng đúc 2003**, không phải hiện vật thế kỷ 18; nhà Thái Học là công trình phục dựng (khởi công 1999, khánh thành 2000). Việc phân biệt hiện vật hiện đại với cổ vật là điểm chuyên môn quan trọng.
+- `docs/04:51` — chuỗi tên công trình trên trục thần đạo (Tứ trụ → Văn Miếu Môn → Đại Trung Môn → Khuê Văn Các → Đại Thành Môn) thay cho "Nghi Môn ngoại/nội" tự đặt: đúng.
+
+**Rủi ro còn lại (không phải sai sự thật, nhưng bị chất vấn được):**
+
+| # | Vấn đề | Bằng chứng | Mức |
+|---|---|---|---|
+| F1 | `docs/04:3` liệt kê **"Wikipedia tiếng Việt" ở vị trí nguồn đầu tiên** trong một tài liệu nộp thầu. Đủ để một chuyên gia di sản chất vấn toàn bộ Phụ lục PL8, kể cả các mục đối chiếu đúng | `docs/04:3` | **Cao** |
+| F2 | `docs/04:52` mô tả thiết kế niên đại hai lớp kèm độ tin cậy (chắc chắn/ước đoán/theo tư liệu) — thiết kế tốt, nhưng cần xác nhận dữ liệu app đã dùng đúng mức độ tin cậy cho các mục Bảng C (khánh đá "thời Nguyễn", chưa rõ năm) chứ không hiển thị như niên đại chắc chắn | `docs/04:47,62` | Trung bình |
+| F3 | `docs/04:30` ghi "Đại Việt lịch triều đăng khoa lục… ghi khoa thi từ 1075 đến 1779" trong khi `docs/04:22` ghi khung niên đại bia là "1442 – 1779". Hai khoảng khác nhau vì hai đối tượng khác nhau (sách vs bia) — **không sai**, nhưng đặt gần nhau dễ bị hỏi nhầm; nên chú thích rõ để người trình diễn không lúng túng | `docs/04:22,30` | Thấp |
+| F4 | Bảng C (`docs/04:62-64`) để ngỏ ba nội dung chờ Trung tâm xác nhận — trung thực và đúng, nhưng cần người trình diễn thuộc, vì đây là ba câu hỏi hội đồng sẽ hỏi đúng vào | `docs/04:62-64` | Thấp |
+| F5 | Không có bản ghi nào chứa nội dung Hán Nôm thật (xem 5.3) — không phải "sai sự thật" nhưng là khoảng trống nội dung ở đúng chỗ hồ sơ tự nhận là điểm mạnh | grep CJK `app/src/` | **Cao** |
+
+**Kết luận mục 5.4:** về độ chính xác thông tin di sản, hồ sơ này **ở trên mặt bằng rõ rệt**. Tôi đi tìm sai sót lịch sử và chủ yếu tìm thấy bằng chứng của một quy trình thẩm định đang chạy thật. Rủi ro còn lại là rủi ro **trình bày** (F1: nguồn Wikipedia đứng đầu) và **khoảng trống nội dung** (F5: không có minh văn), không phải rủi ro sai sự thật.
+
+---
+
+## 6. Danh sách việc phải làm để bịt lỗ
+
+**Giả định chung về chi phí:** 1 người-ngày = 1 người làm 8 giờ. Ước lượng dành cho **lập trình viên đã quen mã nguồn này** (người mới cần nhân 1,5–2). Việc thuộc loại tài liệu tính theo người-ngày của người viết hồ sơ, không phải lập trình viên. Ước lượng **không bao gồm** thời gian rà soát/phê duyệt của chủ đầu tư.
+
+---
+
+### `RT-01` — Đóng gói phông chữ và ảnh vào ứng dụng, cắt toàn bộ lệnh gọi ra ngoài lãnh thổ
+
+**Vì sao.** `app/index.html:7,8,10` tải phông chữ từ `fonts.googleapis.com` / `fonts.gstatic.com`; `app/src/data/collections.ts:7,9,11,13,15,17` và `app/src/pages/DashboardPage.tsx:15` tải 7 ảnh từ `commons.wikimedia.org`. Trong khi đó `docs/05:48` soạn sẵn câu trả lời *"không gọi dịch vụ ngoài lãnh thổ"* và `docs/05:67-68` yêu cầu bài kiểm tra ngắt mạng — hiện cả hai đều không đứng vững.
+
+**Lợi ích lâu dài.** Không chỉ cứu buổi demo. Hệ thống vận hành trong mạng nội bộ cơ quan nhà nước thường bị chặn ra Internet; một ứng dụng phụ thuộc CDN nước ngoài sẽ **hỏng ngay ngày đầu triển khai thật**, và lúc đó sửa tốn hơn nhiều. Đây cũng là điều kiện cần để tuyên bố tuân thủ về chủ quyền dữ liệu trước cơ quan quản lý.
+
+**Ai đang làm.** Đây là thực hành chuẩn cho hệ thống khu vực công: tự lưu (self-host) toàn bộ tài nguyên tĩnh là yêu cầu phổ biến trong các bộ tiêu chí bảo mật ứng dụng web, và cũng là mặc định của các bộ khung phát triển hiện đại khi dựng bản production.
+
+**Cost.** **1,5–2 người-ngày.** Gồm: tải phông Plus Jakarta Sans về `app/public/fonts/` và khai báo `@font-face` cục bộ (0,5); tải 7 ảnh về, kiểm tra giấy phép Creative Commons của từng ảnh Wikimedia và **ghi nguồn/tác giả đúng quy định giấy phép** (0,5–1 — bước này bắt buộc, không được bỏ); chạy lại bài kiểm tra ngắt mạng và sửa nốt (0,5).
+
+**Ưu tiên.** **P0 · [Trước buổi bảo vệ]** — không có ngoại lệ. Đây là việc rẻ nhất trong danh sách và chặn được rủi ro lớn nhất.
+
+**Rủi ro nếu KHÔNG làm.** Người trình diễn nói sai sự thật trước hội đồng về chủ quyền dữ liệu (kiểm chứng được trong 15 giây bằng DevTools); mạng phòng họp chập chờn thì vỡ font toàn bộ giao diện, vỡ ảnh hero màn Tổng quan và 6 ảnh bìa bộ sưu tập — đúng hai màn hình đầu tiên hội đồng nhìn thấy.
+
+---
+
+### `RT-02` — Nạp nội dung minh văn Hán Nôm thật cho 2–3 bia dùng trong kịch bản demo
+
+**Vì sao.** Toàn bộ `app/src/` chỉ chứa **4 ký tự Hán**, nằm trong một placeholder tại `app/src/i18n/vi.ts:105`. Nhãn ba lớp đã có (`app/src/i18n/vi.ts:104,106,108`) và hồ sơ bán năng lực này như điểm mạnh chuyên môn (`docs/03:52`), câu chuyện demo phút 4:45–5:45 xoay quanh *"bổ sung phiên âm và dịch nghĩa minh văn"* (`docs/05:28`) — nhưng không có một bản ghi nào có nội dung.
+
+**Lợi ích lâu dài.** Đây không phải việc làm cho đẹp demo: nó là **bài kiểm tra thật cho mô hình dữ liệu**. Nạp minh văn thật sẽ lộ ra ngay những vấn đề mà thiết kế trên giấy không thấy — độ dài trường, xử lý chữ Nôm hiếm không có trong phông chữ, thứ tự đọc, cách gắn chú thích, cách liên kết phiên âm với vị trí trong nguyên văn. Phát hiện những thứ này bây giờ rẻ hơn phát hiện ở Đợt 7.
+
+**Ai đang làm.** Mô hình ba lớp *nguyên văn – phiên âm – dịch nghĩa* là chuẩn mực trong công bố tư liệu Hán Nôm của giới nghiên cứu Việt Nam; các cơ sở dữ liệu văn khắc quốc tế cũng theo mô hình tương tự (bản gốc – bản chuyển tự – bản dịch) *(cần kiểm chứng tên hệ thống cụ thể trước khi viện dẫn trước hội đồng)*.
+
+**Cost.** **2–4 người-ngày**, và **phụ thuộc chuyên môn ngoài đội kỹ thuật**: cần người đọc được Hán Nôm hoặc nguồn công bố đã có sẵn để trích. Chia: tìm nguồn công bố minh văn cho 2–3 bia (1–2); nhập liệu và kiểm tra hiển thị, kể cả với chữ hiếm (1); rà soát cùng người có chuyên môn (1). **Nếu không tìm được nguồn công bố đáng tin trong thời gian còn lại, KHÔNG được tự dịch** — chuyển sang phương án ghi rõ trường đang chờ dữ liệu chuyên môn, đúng tinh thần `docs/04:11`.
+
+**Ưu tiên.** **P0 · [Trước buổi bảo vệ]** nếu tìm được nguồn; **P1 · [6 tháng]** nếu không.
+
+**Rủi ro nếu KHÔNG làm.** Chuyên gia Hán Nôm trong hội đồng mở một bản ghi bia và thấy ô nguyên văn trống trên toàn bộ dữ liệu. Câu hỏi *"hệ thống chuyên cho văn bia mà không có một chữ văn bia nào?"* rất khó đỡ, vì nó nhắm vào đúng chỗ hồ sơ tự nhận là thế mạnh chuyên môn.
+
+---
+
+### `RT-03` — Sửa `docs/05` và `docs/16` để không còn câu nào mô tả năng lực app không có
+
+**Vì sao.** Ba câu phải sửa, mỗi câu là một quả mìn: `docs/05:30` (*"bấm Xuất Excel → mở file thật"* + *"không cần rào trước đón sau"*) trái ngược trực tiếp với `app/src/pages/ReportsPage.tsx:311`; `docs/05:32` (*"không sửa được"*) không có cơ chế tương ứng trong `app/src/services/mock/auditService.ts`; `docs/05:25` (*"không có số ghi cứng"*) sai với `app/src/data/dashboard.ts:71,84,96,108`. Thêm `docs/16:91` mô tả thư viện `gaussian-splats-3d` không tồn tại, và `docs/03:25` cùng lỗi.
+
+**Lợi ích lâu dài.** Thiết lập một kỷ luật mà `docs/16:17` đã tự đặt ra nhưng chưa tự soi được vào chính mình: **mọi tuyên bố ở thì hiện tại phải truy được xuống một dòng mã**. Nếu kỷ luật này thành quy tắc rà soát trước mỗi bản phát hành, hồ sơ sẽ miễn nhiễm với cả lớp lỗi này về sau.
+
+**Ai đang làm.** Đây chính là nguyên tắc mà `docs/11:539` đã áp dụng rất tốt cho phần kiểm thử (*"không tô hồng mức độ tự động hoá"*). Việc cần làm là **mở rộng chuẩn mực sẵn có của chính đội mình** sang các tài liệu còn lại.
+
+**Cost.** **1–1,5 người-ngày** cho người viết hồ sơ: rà `docs/05`, `docs/16`, `docs/03` theo danh sách G1–G20 ở mục 2, đổi thì hiện tại thành thì tương lai hoặc gỡ hẳn câu.
+
+**Ưu tiên.** **P0 · [Trước buổi bảo vệ]**.
+
+**Rủi ro nếu KHÔNG làm.** Người trình diễn đọc đúng kịch bản và nói sai sự thật trước hội đồng — ở ba thời điểm khác nhau trong 10 phút. Nghiêm trọng hơn: nếu hội đồng phát hiện `docs/16` — tài liệu tự nhận hạn chế — có mục tự nhận sai theo hướng có lợi, thì toàn bộ giá trị làm chứng của tài liệu đó sụp, kéo theo uy tín của cả bộ hồ sơ.
+
+---
+
+### `RT-04` — Quyết dứt điểm về trình xem 3D: hoặc làm loader thật, hoặc mô tả đúng cái đang có
+
+**Vì sao.** `docs/03:25` và `docs/16:91` mô tả `GLTFLoader` + `gaussian-splats-3d`; thực tế `app/package.json` chỉ có `three`, và `app/src/components/StelePreview.tsx:47,51-52,55-57,59` dựng hình bằng primitive. Đoạn "cao trào" của demo (`docs/05:27`) đứng trên nền này.
+
+**Lợi ích lâu dài.** Trình xem 3D là **lý do tồn tại** của một hệ thống quản lý dữ liệu số hóa di sản 3D. Nếu không giải quyết, nó sẽ là món nợ đắt nhất của dự án — và càng để lâu càng khó, vì toàn bộ nghiệp vụ xung quanh (bản dẫn xuất web, phân tầng lưu trữ, kiểm tra toàn vẹn) đều giả định trình xem hoạt động.
+
+**Hai phương án, chọn theo thời gian còn lại:**
+
+- **Phương án A (nếu còn ≥ 5 ngày):** cài `three/examples/jsm/loaders/GLTFLoader`, nạp **một** tệp `.glb` thật của một rùa bia từ thư mục `data/`, thay `StelePreview` cho đúng tài sản đó. Chỉ cần **một** mô hình thật là đủ cứu đoạn cao trào — và câu *"đây là mô hình quét thật của rùa bia số N"* trở thành sự thật kiểm chứng được.
+- **Phương án B (nếu ít thời gian):** giữ nguyên mã, sửa `docs/03:25` và `docs/16:91` cho đúng, đổi thoại `docs/05:27` thành: *"Đây là mô hình minh họa cấu trúc bia và rùa đội bia; trình xem dữ liệu quét thật nối vào ở giai đoạn triển khai khi Trung tâm cấp quyền truy cập kho dữ liệu."* Trung thực, không mất điểm nặng.
+
+**Ai đang làm.** `GLTFLoader` là loader tiêu chuẩn đi kèm `three` — không cần thư viện ngoài, không tăng rủi ro phụ thuộc. glTF là định dạng truyền tải 3D được dùng rộng rãi cho mô hình web.
+
+**Cost.** Phương án A: **3–5 người-ngày** (nạp loader, xử lý kích thước tệp và thời gian tải, xử lý lỗi, kiểm tra trên máy trình diễn) — **giả định đã có sẵn ít nhất một tệp `.glb` đã tối ưu**; nếu phải tự tối ưu từ bản quét gốc thì cộng thêm 2–3 ngày và cần người có kỹ năng xử lý 3D. Phương án B: **0,5 người-ngày**.
+
+**Ưu tiên.** **P0 · [Trước buổi bảo vệ]** — bắt buộc chọn một trong hai, không được để nguyên trạng.
+
+**Rủi ro nếu KHÔNG làm.** Hội đồng mở hai bia liên tiếp, thấy mô hình giống hệt nhau, trong khi người trình diễn vừa nói *"Scan 0,2mm"*. Đây là đòn mất điểm nặng nhất vì nó xảy ra đúng lúc kịch bản dự tính ăn điểm cao nhất, và nó là loại lỗi hội đồng **nhìn thấy tận mắt** chứ không cần tin lời ai.
+
+---
+
+### `RT-05` — Gỡ 4 badge phần trăm và 4 mảng sparkline viết tay khỏi màn Tổng quan
+
+**Vì sao.** `app/src/data/dashboard.ts:71,84,96,108` là hằng số (`'+3,1%'`, `'−12%'`, `'+6,4%'`, `'+4%'`), `:73,86,98,110` là mảng sparkline viết tay. Chúng nằm đúng trên 4 ô mà `docs/05:25` **chủ động mời hội đồng bấm thử** kèm tuyên bố *"không có số ghi cứng"*. Mã nguồn tự bào chữa rằng đây là "decorative, not a factual claim" (`app/src/data/dashboard.ts:57-59`) — lập luận này không đứng vững trước người đọc màn hình.
+
+**Lợi ích lâu dài.** Giữ nguyên giá trị của thành tựu A2 (mọi con số derive từ một nguồn) thay vì để bốn con số trang trí làm hỏng nó. Về lâu dài, khi có backend và có trục thời gian thật, badge xu hướng sẽ tính được thật — lúc đó thêm lại, có căn cứ.
+
+**Ai đang làm.** Nguyên tắc "không hiển thị số liệu không tính được" là chuẩn mực cơ bản trong thiết kế bảng điều khiển quản trị: một chỉ số không có nguồn tính là một chỉ số sẽ bị hỏi.
+
+**Cost.** **0,5 người-ngày.** Gỡ trường `trend`/`trendUp`/`vals` khỏi `DashboardStatDef` và khỏi thành phần hiển thị. Nếu muốn giữ bố cục thị giác, thay sparkline bằng phân bố có thật (ví dụ tỉ trọng theo trạng thái, tính từ `countByStatus` trong `app/src/data/selectors.ts:13-15`) — cộng thêm 0,5 ngày.
+
+**Ưu tiên.** **P0 · [Trước buổi bảo vệ]** — rẻ, và mở khóa cho lời mời kiểm chứng ở `docs/05:25` trở thành đòn ăn điểm thật.
+
+**Rủi ro nếu KHÔNG làm.** Người trình diễn mời hội đồng kiểm chứng "không có số ghi cứng", hội đồng bấm đúng ô có số ghi cứng. Mất điểm gấp đôi vì đã chủ động mời.
+
+---
+
+### `RT-06` — Bổ sung chương "Thoát phụ thuộc nhà thầu" vào `docs/14`
+
+**Vì sao.** Q1 và Q8 đều đâm vào đây, và đây là mũi tấn công chính của nhà thầu chào sản phẩm quốc tế (mục 4.2, điểm 3). `docs/16:169` mới cam kết *"hỗ trợ điều chỉnh trong hợp đồng bảo trì"* — chưa đủ. Không tìm thấy điều khoản escrow hay cam kết xuất dữ liệu chuẩn mở trong tài liệu.
+
+**Lợi ích lâu dài.** Đây là điều khoản bảo vệ **chủ đầu tư**, và chính vì thế nó ghi điểm: một nhà thầu chủ động đề xuất cơ chế để chủ đầu tư thoát khỏi mình là nhà thầu tự tin. Nó cũng buộc đội kỹ thuật giữ kỷ luật về định dạng chuẩn mở suốt vòng đời dự án.
+
+**Ai đang làm.** Ký quỹ mã nguồn với bên thứ ba là thực hành phổ biến trong hợp đồng phần mềm khu vực công ở nhiều nước; cam kết xuất dữ liệu theo chuẩn mở là nguyên tắc nền của cộng đồng bảo quản số (dữ liệu phải sống lâu hơn phần mềm tạo ra nó).
+
+**Cost.** **2 người-ngày** cho người viết hồ sơ, gồm ba nội dung: (a) điều khoản sở hữu mã nguồn thuộc chủ đầu tư khi nghiệm thu; (b) cơ chế ký quỹ mã nguồn và điều kiện kích hoạt; (c) **cam kết xuất toàn bộ dữ liệu và metadata ra định dạng chuẩn mở bằng một thao tác** — mục (c) là mục có sức nặng nhất vì kiểm chứng được khi nghiệm thu.
+
+**Ưu tiên.** **P1 · [Trước buổi bảo vệ]** — không cần code, chỉ cần viết, và trả lời được câu hỏi hiểm nhất về chiến lược.
+
+**Rủi ro nếu KHÔNG làm.** Thua trực diện trước lập luận "chọn mã nguồn mở thì đổi được nhà thầu, chọn các ông thì không". Với hội đồng có người từng bị nhà thầu bỏ rơi giữa chừng, đây là câu hỏi quyết định.
+
+---
+
+### `RT-07` — Viết mục quản lý khóa mã hóa và quyền truy cập của nhà thầu vào `docs/15`
+
+**Vì sao.** Q2 hiện **không trả lời được**. Grep `app/src/` cho `crypto`, `encrypt`, `bcrypt`, `argon` → không có mã mã hóa; và trong `docs/15-ho-so-de-xuat-cap-do-attt.md` (321 dòng) tôi không tìm thấy mục về vòng đời khóa. Hồ sơ đang viện dẫn Luật BVDLCN 91/2025 (`docs/03:71`) nên câu hỏi này chắc chắn được hỏi.
+
+**Lợi ích lâu dài.** Xác lập ranh giới trách nhiệm giữa nhà thầu và chủ đầu tư ngay từ đầu — thứ mà nếu để mơ hồ sẽ thành tranh chấp khi có sự cố thật. Đồng thời là điều kiện cần cho hồ sơ đề xuất cấp độ ATTT được phê duyệt.
+
+**Ai đang làm.** Nguyên tắc chủ dữ liệu giữ khóa, nhà cung cấp không giữ, là mặc định trong các khung an toàn thông tin và trong yêu cầu bảo vệ dữ liệu cá nhân nói chung.
+
+**Cost.** **1,5 người-ngày**: bảng vai trò × quyền với khóa; quy trình cấp/thu hồi quyền truy cập của nhà thầu vào dữ liệu thật (phê duyệt từng lần, ghi nhật ký, hậu kiểm); quy trình luân chuyển khóa và xử lý khi nhân sự nghỉ việc.
+
+**Ưu tiên.** **P1 · [Trước buổi bảo vệ]**.
+
+**Rủi ro nếu KHÔNG làm.** Im lặng trước một câu hỏi mà hội đồng chuyên nghiệp coi là câu phân loại nhà thầu. Không trả lời được câu này thường bị xếp vào nhóm "chưa hiểu bài toán an toàn thông tin".
+
+---
+
+### `RT-08` — Bổ sung trường tác giả bản phiên âm / dịch nghĩa / thẩm định vào lược đồ Hán Nôm
+
+**Vì sao.** Q3. Hệ thống lưu bản phiên âm và dịch nghĩa (`app/src/i18n/vi.ts:106,108`) — đây là **tác phẩm phái sinh có quyền tác giả và quyền nhân thân**. Cần xác nhận `docs/07-mo-hinh-du-lieu.md` đã có trường ghi người thực hiện và người thẩm định chưa; nếu chưa, đây là khoảng trống pháp lý lẫn nghiệp vụ.
+
+**Lợi ích lâu dài.** Không có tên người chịu trách nhiệm thì bản dịch minh văn **không dùng được trong nghiên cứu** — đây là yêu cầu nghiệp vụ, không chỉ là yêu cầu pháp lý. Nó cũng là cơ sở để truy trách nhiệm khi phát hiện sai sót về sau, và để ghi công người làm chuyên môn.
+
+**Ai đang làm.** Ghi nhận người biên dịch và người hiệu đính là chuẩn mực trong công bố tư liệu Hán Nôm; trong mô hình CIDOC-CRM mà hồ sơ đã dùng (`docs/03:54`), đây là quan hệ giữa thực thể con người và sự kiện tạo lập tư liệu.
+
+**Cost.** **1 người-ngày** cho phần tài liệu (bổ sung trường vào `docs/07`); **2–3 người-ngày** nếu làm cả phần giao diện nhập liệu và hiển thị.
+
+**Ưu tiên.** **P1 · [6 tháng]** — trước buổi bảo vệ chỉ cần trả lời được bằng lời và cho thấy đã nghĩ tới.
+
+**Rủi ro nếu KHÔNG làm.** Chuyên gia di sản hỏi *"ai chịu trách nhiệm về bản dịch này?"* và hệ thống không trả lời được. Nghiêm trọng hơn ở giai đoạn vận hành: dữ liệu dịch nghĩa không ghi nguồn sẽ không được giới nghiên cứu chấp nhận, làm mất phần lớn giá trị khai thác.
+
+---
+
+### `RT-09` — Chuyển bảng chi phí vận hành từ con số phẳng sang công thức theo dung lượng
+
+**Vì sao.** Q5, mà chính kịch bản nhận định *"Nhà thầu nào không trả lời được câu này thường bị loại"* (`docs/05:47`). Dữ liệu 3D tăng rất nhanh — `app/src/data/objects/structures.ts:29` ghi 11,2 triệu gaussian cho riêng Khuê Văn Các, `app/src/data/uploads.ts:5` có tệp splat 3,1 GB. Một con số phẳng cho năm 3–5 sẽ sai ngay khi Trung tâm số hóa thêm.
+
+**Lợi ích lâu dài.** Chủ đầu tư tự lập dự toán được cho mọi kịch bản mở rộng mà không phải hỏi nhà thầu — đúng tinh thần *"không cần gọi nhà thầu"* mà `docs/05:31` đã nhấn mạnh là điều đơn vị sự nghiệp quan tâm nhất. Cũng giúp nhà thầu tránh bị ràng vào một con số không giữ được.
+
+**Cost.** **1 người-ngày** cho người viết hồ sơ: rà Chương 16 `docs/01`, tách chi phí cố định / biến đổi, đưa công thức theo TB kèm giả định về tỉ lệ dữ liệu nóng–nguội.
+
+**Ưu tiên.** **P1 · [Trước buổi bảo vệ]**.
+
+**Rủi ro nếu KHÔNG làm.** Trả lời được câu hỏi ở mức tối thiểu nhưng không ghi điểm; và nếu hội đồng hỏi tiếp *"nếu số hóa gấp 5 lần thì sao?"* thì lộ ra bảng chi phí chưa tính tới tăng trưởng.
+
+---
+
+### `RT-10` — Kế hoạch đào tạo tách theo vai + tài liệu hướng dẫn người dùng cuối có ảnh màn hình
+
+**Vì sao.** Q6. `docs/05:44` mới đề xuất *"1 quản trị hệ thống kiêm nhiệm và 1 cán bộ đầu mối dữ liệu"* — mô hình kiêm nhiệm là điểm yếu tự khai. Cần kiểm tra `docs/14-van-hanh-va-ban-giao.md` xem đã có tài liệu hướng dẫn người dùng cuối chưa; trong danh mục 17 tài liệu hiện tại, tôi **không thấy tài liệu hướng dẫn sử dụng dành cho cán bộ nghiệp vụ**.
+
+**Lợi ích lâu dài.** Quyết định hệ thống có thực sự được dùng sau bàn giao hay không. Phần lớn hệ thống CNTT khu vực công chết không phải vì lỗi kỹ thuật mà vì sau 6 tháng không ai còn nhớ cách dùng và người biết dùng đã chuyển công tác. Tài liệu theo vai kèm ảnh màn hình là thứ rẻ nhất chống lại điều đó.
+
+**Cost.** **4–6 người-ngày** cho 4 vai (nhập liệu, biên tập, phê duyệt, quản trị), mỗi vai một tài liệu ngắn 6–10 trang kèm ảnh chụp màn hình. Giả định giao diện đã ổn định — nếu còn thay đổi thì làm sau `RT-01`, `RT-05`.
+
+**Ưu tiên.** **P1 · [6 tháng]**; trước buổi bảo vệ chỉ cần **đề cương** tài liệu để trưng ra (0,5 người-ngày).
+
+**Rủi ro nếu KHÔNG làm.** Câu trả lời cho Q6 nghe như hứa suông. Sau bàn giao, hệ thống có nguy cơ không được sử dụng thật — kết cục tệ hơn cả trượt thầu, vì tiền đã tiêu.
+
+---
+
+### `RT-11` — Cam kết diễn tập phục hồi lần đầu trong 3 tháng, không đợi hết năm
+
+**Vì sao.** `docs/05:32` dạy nói *"Hằng năm diễn tập phục hồi và có biên bản"*, nhưng hiện chưa có lần diễn tập nào và chưa thể có. Chỉ tiêu RPO ≤ 24 giờ / RTO ≤ 4 giờ (`docs/01:482-483`, `:1076-1077`) là cam kết chưa được kiểm chứng.
+
+**Lợi ích lâu dài.** Một RTO chưa từng diễn tập là một con số trên giấy. Diễn tập sớm phát hiện những thứ chỉ lộ ra khi làm thật: thiếu quyền truy cập, thiếu tài liệu quy trình, người giữ khóa đi vắng. Rút ngắn từ "hằng năm" xuống "lần đầu trong 3 tháng" biến một cam kết chung thành một cam kết kiểm chứng được sớm.
+
+**Ai đang làm.** Diễn tập phục hồi định kỳ có biên bản là yêu cầu chuẩn trong các khung quản lý liên tục hoạt động; với dữ liệu di sản không thể tái tạo, đây là biện pháp bắt buộc chứ không phải tùy chọn.
+
+**Cost.** **0,5 người-ngày** để viết cam kết vào `docs/02` và `docs/14`. Chi phí thực hiện diễn tập nằm ở giai đoạn vận hành, không tính vào đây.
+
+**Ưu tiên.** **P2 · [Trước buổi bảo vệ]** (viết cam kết) → **[6 tháng]** (thực hiện lần đầu).
+
+**Rủi ro nếu KHÔNG làm.** Câu hỏi *"đã diễn tập lần nào chưa?"* làm lộ rằng toàn bộ phần bảo đảm liên tục mới ở mức cam kết trên giấy — đúng lúc kịch bản đang dùng nó làm đòn phủ đầu (`docs/05:32`).
+
+---
+
+### `RT-12` — Viết phụ lục so sánh với sản phẩm quản lý sưu tập / bảo quản số quốc tế
+
+**Vì sao.** Q8 hiện **không có tài liệu nào đỡ**. Tôi không tìm thấy mục so sánh nào trong `docs/01` hay `docs/10`. Nếu nhà thầu cạnh tranh chào CollectiveAccess/Islandora/Archivematica/Preservica/Axiell/TMS, hội đồng sẽ hỏi thẳng và đội mình phải ứng biến tại chỗ.
+
+**Lợi ích lâu dài.** Buộc đội mình xác định rõ **mình mạnh ở đâu và thua ở đâu** — thứ mà nếu không viết ra thì sẽ tự huyễn hoặc. Bảng so sánh trung thực cũng là tài liệu tốt để định hướng lộ trình sản phẩm về sau (nên học gì từ ai).
+
+**Cost.** **2–3 người-ngày**, trong đó **ít nhất 1 ngày dành cho kiểm chứng thông tin về sản phẩm đối thủ**. Nhắc lại cảnh báo ở đầu mục 4: bảng so sánh trong báo cáo này **chưa được kiểm chứng trực tuyến**, không được sao chép nguyên vào hồ sơ thầu.
+
+**Ưu tiên.** **P1 · [Trước buổi bảo vệ]**.
+
+**Rủi ro nếu KHÔNG làm.** Bị dồn vào thế phòng thủ ở câu hỏi chiến lược quan trọng nhất; hoặc tệ hơn, nói sai về sản phẩm đối thủ và bị đối thủ đính chính ngay tại chỗ.
+
+---
+
+### `RT-13` — Thêm mục "Ý kiến Bộ VHTTDL cho việc số hóa tư liệu thuộc danh mục UNESCO" vào `docs/16` mục 5
+
+**Vì sao.** `docs/03:53` đã nhận diện đúng: NĐ 308/2025/NĐ-CP Điều 87 yêu cầu ý kiến bằng văn bản của Bộ VHTTDL khi chuyển đổi tư liệu di sản thuộc danh mục UNESCO sang dạng số, *"áp dụng trực tiếp cho 82 bia Tiến sĩ"*. Nhưng `docs/16` mục 5 (phụ thuộc bên ngoài) liệt kê 4 phụ thuộc và **không có mục này** — trong khi đây là phụ thuộc pháp lý ràng buộc nhất trong cả dự án.
+
+**Lợi ích lâu dài.** Phát hiện muộn nghĩa vụ này sẽ chặn việc xuất bản dữ liệu sau khi đã số hóa xong — tức là chặn ở đúng điểm cuối, khi tiền đã tiêu và tiến độ đã cam kết. Đưa vào danh sách phụ thuộc ngay từ đầu để Trung tâm khởi động thủ tục song song với triển khai kỹ thuật.
+
+**Cost.** **0,5 người-ngày.** Viết một mục 5.5 theo đúng khuôn 4 dòng đã dùng cho các mục 5.1–5.4.
+
+**Ưu tiên.** **P0 · [Trước buổi bảo vệ]** — rẻ nhất trong toàn bộ danh sách, và biến một rủi ro thành một điểm cộng về mức độ am hiểu pháp lý.
+
+**Rủi ro nếu KHÔNG làm.** Hội đồng nhận ra hồ sơ đã trích đúng nghĩa vụ ở `docs/03:53` nhưng lại quên đưa vào danh sách phụ thuộc — làm giảm độ tin cậy của chính danh sách đó. Ở giai đoạn vận hành: rủi ro phải dừng xuất bản để chờ thủ tục.
+
+---
+
+### `RT-14` — Tính mã kiểm tra toàn vẹn thật bằng Web Crypto cho luồng tải lên
+
+**Vì sao.** `docs/05:27` dạy nói *"kèm mã kiểm tra toàn vẹn SHA-256 để 10 năm sau vẫn biết tệp còn nguyên vẹn hay đã hỏng"*; `docs/01:209` đặt chỉ tiêu MT-06 ≥ 99,9% tệp hợp lệ. Nhưng grep `crypto`/`createHash`/`subtle.digest` trong `app/src/` → **0 kết quả**; các chuỗi checksum hiện là dữ liệu tĩnh. Đây cũng là chỗ Archivematica/Preservica mạnh hơn hẳn (mục 4.2, điểm 2).
+
+**Lợi ích lâu dài.** Kiểm tra toàn vẹn là **nghiệp vụ lõi của bảo quản số**, không phải tính năng phụ. Làm thật ngay ở luồng tải lên xác lập đúng kiến trúc từ đầu: mã băm tính tại thời điểm nhận tệp, lưu cùng metadata, quét lại theo lịch. Làm sau sẽ phải sửa cả mô hình dữ liệu lẫn quy trình.
+
+**Ai đang làm.** Kiểm tra toàn vẹn định kỳ là yêu cầu nền của mô hình OAIS mà hồ sơ đã viện dẫn (`docs/03:63`) và là chức năng trung tâm của các hệ bảo quản số chuyên dụng.
+
+**Cost.** **2–3 người-ngày** cho bản trình duyệt: dùng `crypto.subtle.digest('SHA-256', …)` có sẵn trong trình duyệt (không cần thư viện ngoài), tính mã băm khi chọn tệp ở màn Nhập dữ liệu, hiển thị mã thật ở tab Phiên bản. **Giả định:** làm ở mức trình diễn được cơ chế, không phải hệ thống quét định kỳ toàn kho — phần đó thuộc backend.
+
+**Ưu tiên.** **P1 · [Trước buổi bảo vệ]** nếu còn thời gian sau `RT-01`–`RT-05`; nếu không, **P0 cho việc sửa lời thoại** (đưa về thì tương lai, thuộc `RT-03`) và **P1 · [6 tháng]** cho việc hiện thực.
+
+**Rủi ro nếu KHÔNG làm.** Nói một tuyên bố kỹ thuật cụ thể mà không có cơ chế đỡ, trước một hội đồng có thể có chuyên gia lưu trữ. Và bỏ mất cơ hội thu hẹp khoảng cách rõ rệt nhất so với sản phẩm chuyên dụng quốc tế.
+
+---
+
+### `RT-15` — Bổ sung kiểm thử tự động cho `selectors`, `search`, `assetCode`
+
+**Vì sao.** `docs/11:537-539` đã tự nhận rất trung thực rằng chỉ có một tệp kiểm thử. `app/tests/canChi.test.ts` chạy pass 3/3. Nhưng các hàm mà **demo phụ thuộc trực tiếp** thì chưa có kiểm thử: `app/src/data/selectors.ts:9-22` (mọi con số Tổng quan), `app/src/utils/search.ts:10-33` (đoạn mời hội đồng tự gõ), `app/src/utils/assetCode.ts` (mã định danh).
+
+**Lợi ích lâu dài.** `docs/11:543` đã lập luận rất đúng: can chi được tự động hóa đầu tiên vì **đã từng gõ sai ba lần thật**. Cùng logic đó, `selectors.ts` xứng đáng là hàm thứ hai — vì lỗi số liệu tự mâu thuẫn cũng **đã từng xảy ra thật** (chính là "Đòn 1–3 của red-team" mà `docs/03:79` và `app/src/data/dashboard.ts:2-8` nhắc tới). Có kiểm thử ở đây nghĩa là lỗi đó không thể tái phát âm thầm.
+
+**Cost.** **2–3 người-ngày.** Không cần cài thư viện mới — dùng đúng bộ chạy sẵn có `node --experimental-strip-types --test` như `app/tests/canChi.test.ts` đang dùng. Ước lượng cho khoảng 20–30 ca kiểm thử.
+
+**Ưu tiên.** **P1 · [6 tháng]** — là điều kiện qua cổng TRR mà `docs/16:85` đã cam kết.
+
+**Rủi ro nếu KHÔNG làm.** Mỗi lần sửa mã trước buổi bảo vệ đều có nguy cơ làm hỏng con số trên màn Tổng quan mà không ai biết — đúng nỗi lo đã ghi ở `docs/05:73` (*"dữ liệu có thể bị ghi đè trong lúc phát triển"*). Kiểm thử tự động là cách duy nhất gỡ được nỗi lo đó thay vì phải dặn nhau đừng bấm.
+
+---
+
+## 7. Bảng tổng hợp xếp theo mức nguy hiểm
+
+| Hạng | Vấn đề | Bằng chứng chính | Việc phải làm | Cost (người-ngày) | Phân kỳ |
+|---|---|---|---|---|---|
+| 1 | Gọi Google Fonts + 7 ảnh Wikimedia → câu trả lời chủ quyền dữ liệu sai; bài test ngắt mạng sẽ vỡ | `app/index.html:7,8,10`; `app/src/data/collections.ts:7-17`; `app/src/pages/DashboardPage.tsx:15` vs `docs/05:48,67,76` | `RT-01` | 1,5–2 | Trước bảo vệ |
+| 2 | Không có trình xem 3D/splat thật; 2 tài liệu mô tả loader và thư viện không tồn tại | `app/package.json`; `app/src/components/StelePreview.tsx:47,51-52,55-57,59` vs `docs/03:25`, `docs/16:91`, `docs/05:27` | `RT-04` | 3–5 (PA A) hoặc 0,5 (PA B) | Trước bảo vệ |
+| 3 | Nút Xuất Excel không tạo file, app tự in dòng thừa nhận ngay cạnh nút | `app/src/pages/ReportsPage.tsx:311,157-162` vs `docs/05:30` | `RT-03` | 1–1,5 | Trước bảo vệ |
+| 4 | Mời hội đồng kiểm chứng "không có số ghi cứng" trong khi có 4 badge + 4 sparkline viết tay | `app/src/data/dashboard.ts:71,73,84,86,96,98,108,110` vs `docs/05:25` | `RT-05` | 0,5–1 | Trước bảo vệ |
+| 5 | Đăng nhập nhận mọi tài khoản; OTP là hằng số `123456` có nút tự điền; phiên = 2 khóa localStorage | `app/src/pages/LoginPage.tsx:22,102-106,149-153`; `app/src/context/AuthContext.tsx:65,74-75` | `RT-03` (sửa thoại) | 0,5 | Trước bảo vệ |
+| 6 | Không có một chữ Hán Nôm nào trong dữ liệu, dù bán năng lực Hán Nôm 3 lớp | grep CJK `app/src/` → 4 ký tự, đều ở `app/src/i18n/vi.ts:105` vs `docs/03:52`, `docs/05:28` | `RT-02` | 2–4 | Trước bảo vệ / 6 tháng |
+| 7 | Nhật ký tuyên bố "không sửa được" nhưng không có cơ chế bất biến nào | `app/src/services/mock/auditService.ts` (grep `append`/`WORM` → 0) vs `docs/05:32` | `RT-03` | (gộp) | Trước bảo vệ |
+| 8 | Tuyên bố tính SHA-256 nhưng không có mã băm nào được tính | grep `crypto`/`createHash` `app/src/` → 0 vs `docs/05:27`, `docs/01:209` | `RT-14` | 2–3 | Trước bảo vệ / 6 tháng |
+| 9 | Không có cơ chế escrow / thoát phụ thuộc nhà thầu trong hồ sơ | `docs/14` (thiếu mục); `docs/16:169` chỉ cam kết bảo trì | `RT-06` | 2 | Trước bảo vệ |
+| 10 | Không có mục quản lý khóa mã hóa; Q2 không trả lời được | `docs/15` (thiếu mục); grep `encrypt` `app/src/` → 0 | `RT-07` | 1,5 | Trước bảo vệ |
+| 11 | Thiếu hẳn mục so sánh với sản phẩm quốc tế | Không tìm thấy trong `docs/01`, `docs/10` | `RT-12` | 2–3 | Trước bảo vệ |
+| 12 | Chi phí vận hành là số phẳng, không có công thức theo dung lượng | `docs/05:47`; `app/src/data/objects/structures.ts:29`; `app/src/data/uploads.ts:5` | `RT-09` | 1 | Trước bảo vệ |
+| 13 | Nghĩa vụ xin ý kiến Bộ VHTTDL cho tư liệu UNESCO chưa vào danh sách phụ thuộc | `docs/03:53` có, `docs/16` mục 5 thiếu | `RT-13` | 0,5 | Trước bảo vệ |
+| 14 | `docs/04:3` đặt Wikipedia làm nguồn đối chiếu đầu tiên | `docs/04:3` | `RT-03` | (gộp) | Trước bảo vệ |
+| 15 | Ký số bản số hóa (D9) là nghĩa vụ Bắt buộc nhưng không có cơ chế | `docs/03:99` vs grep `app/src/` | Ghi rõ là giai đoạn sau trong `docs/03` | 0,5 | Trước bảo vệ |
+| 16 | Ghi chú công việc nội bộ ("Cần review", "Cần quyết định") còn trong tài liệu nộp thầu | `docs/03:99,100,104` | Rà soát biên tập | 0,5 | Trước bảo vệ |
+| 17 | Thiếu trường tác giả bản phiên âm/dịch nghĩa | `docs/07` (cần xác nhận); `app/src/i18n/vi.ts:106,108` | `RT-08` | 1 (tài liệu) / 3 (code) | 6 tháng |
+| 18 | Thiếu tài liệu hướng dẫn người dùng cuối theo vai | Không có trong danh mục 17 tài liệu | `RT-10` | 4–6 | 6 tháng |
+| 19 | Chỉ 1 tệp kiểm thử; các hàm demo phụ thuộc chưa có kiểm thử | `app/tests/` (1 tệp); `docs/11:537` (đã tự nhận) | `RT-15` | 2–3 | 6 tháng |
+| 20 | RTO/RPO chưa từng diễn tập | `docs/01:482-483` vs `docs/05:32` | `RT-11` | 0,5 | Trước bảo vệ / 6 tháng |
+
+**Tổng chi phí nhóm "Trước buổi bảo vệ" (P0 + P1 thiết yếu):** khoảng **17–23 người-ngày**, trong đó nhóm P0 tối thiểu (`RT-01`, `RT-03`, `RT-04` phương án B, `RT-05`, `RT-13`) chỉ khoảng **4,5–6 người-ngày** — đây là gói rẻ nhất chặn được 5/5 đòn nguy hiểm nhất. Nếu chỉ có 1 tuần, làm đúng gói này.
+
+---
+
+## 8. Nguồn tham chiếu
+
+### Tài liệu trong hồ sơ (đọc trực tiếp)
+
+- `docs/00-ke-hoach-nang-cap.md` — kế hoạch nâng cấp IA v3, nhóm màn hình A/B/C
+- `docs/01-thuyet-minh-ky-thuat.md` — dòng 209 (MT-06), 480–483 và 1076–1077 (SLA/RPO/RTO), 684, 751, 869, 881, 1107, 1256
+- `docs/03-ma-tran-truy-vet.md` — toàn văn; trọng tâm dòng 13, 25, 27, 34, 36, 45, 52–54, 62–63, 70–72, 79–80, 91–100, 104
+- `docs/04-phu-luc-fact-di-san.md` — toàn văn; trọng tâm dòng 3, 11, 21–34 (Bảng A), 44–52 (Bảng B), 62–66 (Bảng C)
+- `docs/05-kich-ban-demo.md` — toàn văn; trọng tâm dòng 23–33 (bảng phút-by-phút), 39–48 (vòng hỏi vặn), 52–79 (checklist)
+- `docs/11-ke-hoach-kiem-thu.md` — dòng 61, 150, 533–559 (mục 9, hiện trạng tự động hóa)
+- `docs/16-van-de-da-biet.md` — toàn văn; trọng tâm dòng 17, 27–34, 36–43, 45–52, 69–76, 78–85, 87–94, 102–109, 111–118, 120–127, 135–142, 144–151, 153–160, 162–169
+- `docs/06-dac-ta-api.md` — dòng 33, 39, 73–76 (khai báo server Production/Staging), 698
+- `docs/15-ho-so-de-xuat-cap-do-attt.md` — quét tìm mục quản lý khóa (không tìm thấy)
+- `docs/adr/0012-nhat-ky-append-only-thoi-han-luu-theo-cap-do-attt.md` — nguyên tắc nhật ký chỉ ghi thêm
+
+### Mã nguồn ứng dụng (đọc và grep trực tiếp)
+
+- `app/package.json` — danh sách phụ thuộc (xác nhận không có `gaussian-splats-3d`, không có thư viện xlsx, không có thư viện kiểm thử ngoài)
+- `app/index.html:7,8,10` — lệnh gọi Google Fonts
+- `app/src/components/StelePreview.tsx:1-2,47,51-52,55-57,59` — mô hình 3D dựng bằng primitive
+- `app/src/data/collections.ts:7,9,11,13,15,17` · `app/src/pages/DashboardPage.tsx:15` — ảnh Wikimedia
+- `app/src/data/dashboard.ts:2-8,57-59,71,73,84,86,96,98,108,110` — badge và sparkline viết tay; chú thích nguyên tắc A2
+- `app/src/data/selectors.ts:5-6,9-22,29-52` — các hàm derive số liệu
+- `app/src/data/heritage.ts:6-11,14-21` — hằng số xếp hạng di tích và UNESCO
+- `app/src/data/digitization.ts:263,318,378-390,429,441-442` — phân loại dạng số, chính sách bảo hiểm PLY/E57, nhận diện nội dung Hán Nôm
+- `app/src/data/objects/structures.ts:27-29,79-81,102-104,112-115,137-143,160-162` — dữ liệu splat các công trình
+- `app/src/data/uploads.ts:5` — tệp splat 3,1 GB
+- `app/src/data/connections.ts:26` — endpoint tên miền chưa tồn tại
+- `app/src/pages/LoginPage.tsx:12,22,102-106,149-153,168-171` — luồng xác thực mô phỏng
+- `app/src/context/AuthContext.tsx:48-49,59,65,74-77,84-85` — phiên đăng nhập qua localStorage
+- `app/src/pages/ReportsPage.tsx:54-55,152-162,296-311` — xuất báo cáo mô phỏng
+- `app/src/pages/AssetDetailPage.tsx:20,80,158,166,320,325,705-730` — luồng trả lại/gỡ xuất bản
+- `app/src/services/mock/assetService.ts:29,31` — hợp đồng dịch vụ trả lại/gỡ xuất bản
+- `app/src/services/mock/auditService.ts` — toàn file (39 dòng)
+- `app/src/utils/canChi.ts:5-7,12-14,17-21,24-26` — thuật toán can chi
+- `app/src/utils/search.ts:10-18,21-33` — tìm kiếm bỏ dấu hai chiều
+- `app/src/i18n/vi.ts:104-108` · `en.ts` · `fr.ts` — lớp đa ngữ (233 / 22 / 19 dòng)
+- `app/tests/canChi.test.ts` — chạy `npm test`: pass 3/3
+
+### Căn cứ pháp lý được hồ sơ viện dẫn (trích lại từ hồ sơ, không tự kiểm chứng độc lập)
+
+Luật Dữ liệu 60/2024/QH15; Luật Di sản văn hóa 45/2024/QH15 (Điều 33, 57, 85); Luật Bảo vệ dữ liệu cá nhân 91/2025/QH15 (Điều 16, 19, 21, 23, 33); Luật Giao dịch điện tử 20/2023/QH15 (Điều 12–13); Nghị định 308/2025/NĐ-CP (Điều 85, 87, 89); Nghị định 278/2025/NĐ-CP (Điều 13, 14); Nghị định 165/2025/NĐ-CP (Điều 5, 10, 15, 17); Nghị định 356/2025/NĐ-CP; Nghị định 137/2024/NĐ-CP; Nghị định 53/2022/NĐ-CP (Điều 27); Quyết định 548/QĐ-TTg ngày 10/5/2012. **Tất cả trích lại theo `docs/03` và `docs/16`; báo cáo này không tự kiểm chứng lại văn bản gốc.**
+
+### Giới hạn của báo cáo này
+
+1. **Không truy cập được nguồn trực tuyến** trong phiên làm việc, nên toàn bộ mục 4 (so sánh sản phẩm đối thủ) là kiến thức chung chưa kiểm chứng — đã gắn nhãn *(cần kiểm chứng)* ở từng chỗ. **Không được sao chép nguyên vào hồ sơ thầu.**
+2. **Không chạy ứng dụng** — mọi kết luận về hành vi ứng dụng suy ra từ đọc mã nguồn. Các phát hiện về Google Fonts, Wikimedia, badge viết tay, xuất Excel, luồng đăng nhập đều đọc trực tiếp từ mã và có độ tin cậy cao; nhưng **nên chạy thử để xác nhận** trước khi hành động.
+3. **Chưa đọc toàn văn** `docs/01` (1.422 dòng), `docs/06` (1.980 dòng), `docs/07`, `docs/09`, `docs/10`, `docs/12`, `docs/13`, `docs/14`, `docs/15` — chỉ grep có mục tiêu. Có thể còn khoảng cách tài liệu ↔ ứng dụng chưa phát hiện, đặc biệt trong đặc tả API 1.980 dòng.
+4. **Chưa rà toàn bộ dữ liệu mock** — mục 5.4 kiểm các mốc nền tảng và các mục trong `docs/04`, chưa duyệt hết ~150 bản ghi. Rủi ro còn sai sót lẻ trong dữ liệu sinh tự động (`app/src/data/objects/artifactsGenerated.ts`, `app/src/data/assets/generator.ts`) — **đề nghị rà riêng trước buổi bảo vệ**.
+5. **Không đánh giá được năng lực và kinh nghiệm nhà thầu** (Q14) vì không có dữ liệu trong repo.
+
+---
+
+*Hết báo cáo. Mọi cáo buộc trong tài liệu này đều kèm `đường/dẫn:dòng` để đội triển khai tự kiểm chứng lại — nếu một phát hiện nào sai, xin đối chiếu trực tiếp vị trí đã dẫn và ghi nhận ngược lại.*

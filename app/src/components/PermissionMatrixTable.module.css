@@ -1,0 +1,277 @@
+.wrap {
+  --grid-line: #e4e4d8;
+  --group-line: #cbcbba;
+  --off-dot: #cdcdbe;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+/* Cột quyền hẹp và bằng nhau: ma trận phải đọc như một lưới, không phải một bảng
+   thưa — khoảng trống lớn giữa các cột khiến mắt không nối được hàng với cột. */
+.permCol {
+  width: 82px;
+}
+
+/* --- Đầu bảng --- */
+
+.groupRow th,
+.permRow th {
+  background: transparent;
+  font-weight: 700;
+  color: #5f5f54;
+  padding: 0;
+}
+
+.groupHead {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7c7c6d;
+  padding: 0 6px 5px;
+  text-align: center;
+  border-bottom: 1px solid var(--grid-line);
+}
+
+.permHead {
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  text-align: center;
+  padding: 7px 4px 9px;
+  white-space: nowrap;
+  border-bottom: 1.5px solid var(--group-line);
+}
+
+.modHead {
+  text-align: left;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7c7c6d;
+  padding: 0 12px 9px 2px;
+  vertical-align: bottom;
+  border-bottom: 1.5px solid var(--group-line);
+  min-width: 200px;
+}
+
+/* Vạch ngăn giữa các nhóm quyền — chạy suốt từ đầu bảng xuống hết thân bảng. */
+.groupEnd {
+  border-right: 1.5px solid var(--group-line);
+}
+
+/* --- Dải nhóm phân hệ --- */
+
+.bandRow td {
+  padding: 0;
+}
+
+.band {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a9a88;
+  padding: 15px 2px 6px;
+}
+
+.bandRow:first-child .band {
+  padding-top: 10px;
+}
+
+/* --- Thân bảng --- */
+
+.table tbody tr:not(.bandRow) + tr:not(.bandRow) th,
+.table tbody tr:not(.bandRow) + tr:not(.bandRow) td {
+  border-top: 1px solid var(--grid-line);
+}
+
+.modCell {
+  text-align: left;
+  font-weight: 600;
+  padding: 9px 14px 9px 2px;
+  vertical-align: middle;
+}
+
+.modName {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.3;
+}
+
+/* Dòng phụ giữ chiều cao cố định dù có hay không có thẻ "không có quyền" — nếu để
+   thẻ đó xuống dòng riêng thì các hàng cao thấp so le, mất nhịp lưới. */
+.subLine {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 1px;
+  min-height: 15px;
+}
+
+.route {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  color: #8a8a7a;
+}
+
+.noneTag {
+  font-size: 11px;
+  font-weight: 500;
+  font-style: italic;
+  color: #9a9a8a;
+}
+
+/* Hàng không có quyền nào: làm mờ để nửa dưới bảng không "kêu" ngang với nửa trên
+   — nhìn một cái là thấy vai trò này không chạm tới phân hệ nào. */
+.rowEmpty .modName {
+  font-weight: 500;
+  color: #8a8a7a;
+}
+
+.cell {
+  text-align: center;
+  padding: 7px 4px;
+  position: relative;
+}
+
+/* --- Ô trạng thái (chế độ chỉ đọc) --- */
+
+.on,
+.off {
+  display: inline-grid;
+  place-items: center;
+  vertical-align: middle;
+}
+
+.on {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: var(--ink);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(20, 20, 15, 0.18);
+}
+
+.on svg {
+  width: 13px;
+  height: 13px;
+}
+
+.off {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+}
+
+.off::after {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--off-dot);
+}
+
+/* Ổ khóa phải nổi hơn dấu chấm "không có quyền": hai thứ khác nhau về bản chất —
+   một bên là "vai trò này không được cấp", bên kia là "không ai cấp được". */
+.locked {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  color: #7c7c6b;
+  background: #efefe4;
+  border: 1px dashed #b9b9a6;
+  cursor: help;
+}
+
+.locked svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* --- Ô điều khiển (chế độ sửa được) --- */
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ink);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+/* --- Đánh dấu ngoại lệ --- */
+
+.diff::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b8860b;
+}
+
+.conflict {
+  background: #ffe6d8;
+  box-shadow: inset 0 0 0 1.5px #c0562a;
+}
+
+/* --- Chú thích --- */
+
+.legend {
+  list-style: none;
+  margin: 12px 0 2px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #5f5f54;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.swatchDiff,
+.swatchConflict {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.swatchDiff {
+  background: #b8860b;
+}
+
+.swatchConflict {
+  background: #ffe6d8;
+  box-shadow: inset 0 0 0 1.5px #c0562a;
+}
+
+@media (max-width: 900px) {
+  .permCol {
+    width: 64px;
+  }
+  .modHead {
+    min-width: 150px;
+  }
+  .route {
+    display: none;
+  }
+}

@@ -1,0 +1,106 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fieldLabel {
+  font-size: 13px;
+  color: #5f5f54;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 5px;
+}
+
+.textInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: #f2f1e9;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.select {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: #f2f1e9;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.errorText {
+  font-size: 11px;
+  color: #9a4a1f;
+  margin-top: 4px;
+}
+
+.eraBlock {
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid #e2e1d6;
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.eraTitle {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.eraGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 160px;
+  gap: 12px;
+}
+
+.row2 {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #5f5f54;
+}
+
+.checkboxRow input {
+  width: 16px;
+  height: 16px;
+}
+
+.documentBlock {
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid #e2e1d6;
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.documentTitle {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+@media (max-width: 1024px) {
+  .eraGrid {
+    grid-template-columns: 1fr;
+  }
+  .row2 {
+    grid-template-columns: 1fr;
+  }
+}

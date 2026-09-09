@@ -1,0 +1,149 @@
+.backLink {
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.headRow {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  margin: 12px 0 18px;
+  flex-wrap: wrap;
+}
+
+.cover {
+  width: 180px;
+  height: 110px;
+  border-radius: 16px;
+  overflow: hidden;
+  flex: none;
+  box-shadow: 0 6px 20px rgba(20, 20, 15, 0.1);
+}
+
+.descWrap {
+  flex: 1;
+  min-width: 240px;
+}
+
+.desc {
+  font-size: 14px;
+  color: #5f5f54;
+  margin: 0;
+  max-width: 620px;
+}
+
+.viewSwitch {
+  display: inline-flex;
+  gap: 3px;
+  background: var(--accent-soft);
+  border-radius: 999px;
+  padding: 4px;
+  flex: none;
+}
+
+.viewChip {
+  border: none;
+  font: inherit;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: 999px;
+}
+
+.tagRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.tagRowTitle {
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tagRowCount {
+  font-size: 13px;
+  color: #5f5f54;
+  margin-left: auto;
+}
+
+.empty {
+  color: #5f5f54;
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  transition: box-shadow 0.15s ease;
+}
+.card:hover {
+  box-shadow: 0 12px 28px rgba(20, 20, 15, 0.14);
+}
+
+.thumb {
+  aspect-ratio: 4 / 3;
+}
+
+.cardBody {
+  padding: 12px 14px 16px;
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cardCode {
+  font-size: 10px;
+  font-weight: 700;
+  color: #5f5f54;
+  white-space: nowrap;
+  flex: none;
+}
+
+.cardName {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 7px;
+}
+
+.cardMeta {
+  font-size: 12px;
+  color: #6f6f62;
+  margin-top: 6px;
+}
+
+.listThumb {
+  width: 44px;
+  height: 32px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* A8 responsive — the auto-fill card grid already reflows on its own; the
+   head row (cover + description + view switch) just needs a bit less room
+   on narrower screens. */
+@media (max-width: 1024px) {
+  .cover {
+    width: 120px;
+    height: 80px;
+  }
+  .descWrap {
+    min-width: 200px;
+  }
+}

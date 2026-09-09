@@ -1,0 +1,95 @@
+.topRow {
+  display: flex;
+  justify-content: flex-end;
+  margin: 6px 0 18px;
+}
+
+.createBtn {
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 10px 20px;
+}
+.createBtn:hover {
+  background: #f3f3ec;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* A8 responsive — rigid repeat(3,1fr) grid (redteam.md mục a) steps down
+   instead of squeezing cards unreadably thin on a 1280/1024px screen. */
+@media (max-width: 1280px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  transition: box-shadow 0.15s ease;
+}
+.card:hover {
+  box-shadow: 0 12px 28px rgba(20, 20, 15, 0.14);
+}
+
+.cover {
+  height: 150px;
+}
+
+.body {
+  padding: 16px 20px 20px;
+}
+
+.bodyTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.countChip {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 999px;
+}
+
+.updated {
+  font-size: 12px;
+  color: #6f6f62;
+}
+
+.name {
+  margin: 12px 0 6px;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.desc {
+  font-size: 13px;
+  color: #5f5f54;
+  margin: 0;
+}
+
+.foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #6f6f62;
+  margin-top: 12px;
+}

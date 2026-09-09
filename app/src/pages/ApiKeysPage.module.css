@@ -1,0 +1,265 @@
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 6px 0 18px;
+}
+
+.count {
+  font-size: 14px;
+  color: #5f5f54;
+}
+
+.addBtn {
+  margin-left: auto;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 10px 20px;
+}
+.addBtn:hover {
+  background: var(--ink-hover);
+}
+
+.tableScroll {
+  overflow-x: auto;
+}
+
+.scopeChips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  max-width: 280px;
+}
+
+.scopeChip {
+  font-size: 11.5px;
+  font-weight: 600;
+  background: #f2f1e9;
+  color: #5f5f54;
+  border-radius: 999px;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+
+.unlimitedWarn {
+  font-size: 11px;
+  color: #c0562a;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.revokedNote {
+  font-size: 12px;
+  color: #5f5f54;
+  margin-top: 3px;
+  max-width: 260px;
+}
+
+.rowActions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.rowBtn {
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+.rowBtn:hover {
+  background: #f3f3ec;
+}
+.rowBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Create modal */
+
+.modalHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.modalClose {
+  border: none;
+  background: #f2f1e9;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.modalClose:hover {
+  background: #e7e5da;
+}
+
+.formLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5f5f54;
+  display: block;
+  margin: 16px 0 6px;
+}
+
+.textInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: #f2f1e9;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+}
+
+.textArea {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: #f2f1e9;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  min-height: 70px;
+  resize: vertical;
+  margin-top: 10px;
+}
+
+.chipRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.warnText {
+  font-size: 12.5px;
+  color: #9a4a1f;
+  background: #ffd9c2;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 8px 0 0;
+}
+
+.hintText {
+  font-size: 12px;
+  color: #6f6f62;
+  margin: 6px 0 0;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding-top: 18px;
+  margin-top: 20px;
+  border-top: 1px solid #e7e7dc;
+}
+
+.cancelBtn {
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 9px 18px;
+}
+.cancelBtn:hover {
+  background: #f3f3ec;
+}
+
+.saveBtn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 9px 20px;
+}
+.saveBtn:hover {
+  background: var(--ink-hover);
+}
+.saveBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Reveal-once modal */
+
+.revealWarn {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #c0392b;
+  margin: 10px 0 14px;
+}
+
+.revealBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f2f1e9;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.revealValue {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  word-break: break-all;
+  flex: 1;
+}
+
+.copyBtn {
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 8px 14px;
+  flex: none;
+}
+.copyBtn:hover {
+  background: #f3f3ec;
+}
+
+@media (max-width: 1024px) {
+  .revealBox {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

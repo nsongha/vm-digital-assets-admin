@@ -1,0 +1,68 @@
+/* Shared plain-table styling used by every data table across the app
+   (library, users, logs, apis, requests, batch preview, upload queue,
+   asset files, collection list view) — ported from the many near-identical
+   inline <table> blocks in v3.html. */
+
+/* Wrap wide <table> elements in <div className="table-scroll"> so only the
+   table scrolls horizontally on narrow viewports — the page itself never
+   should (A8 responsive). */
+.table-scroll {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table thead th {
+  text-align: left;
+  font-size: 12px;
+  color: #6f6f62;
+  font-weight: 600;
+  padding: 12px 8px;
+  border-bottom: 1px solid #e7e7dc;
+}
+
+.data-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #e7e7dc;
+}
+
+.data-table--tight td,
+.data-table--tight thead th {
+  padding: 11px 8px;
+}
+
+.data-table tbody tr.clickable {
+  cursor: pointer;
+}
+.data-table tbody tr.clickable:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+.data-table tbody tr.clickable:focus-visible {
+  outline: 2px solid #1a1a1a;
+  outline-offset: -2px;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.muted {
+  color: #5f5f54;
+}
+
+.faint {
+  color: #6f6f62;
+}
+
+.strong {
+  font-weight: 700;
+}
+
+.mono {
+  font-family: ui-monospace, monospace;
+}

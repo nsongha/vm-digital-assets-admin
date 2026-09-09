@@ -1,0 +1,547 @@
+.sectionTitle {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.connRow {
+  display: grid;
+  grid-template-columns: 170px 1fr auto;
+  gap: 18px;
+  align-items: start;
+  padding: 16px 22px;
+  border-bottom: 1px solid rgba(20, 20, 15, 0.08);
+}
+.connRow:last-child {
+  border-bottom: none;
+}
+
+.connKind {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #5f5f54;
+  margin-bottom: 7px;
+}
+
+.connMain {
+  min-width: 0;
+}
+
+.connName {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.connDesc {
+  color: #5f5f54;
+  font-size: 13px;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+.connActions {
+  text-align: right;
+}
+
+.connSync {
+  color: #6f6f62;
+  font-size: 12px;
+  white-space: nowrap;
+  margin-bottom: 8px;
+}
+
+.connBtns {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.iconBtn {
+  border: 1px solid #dcdcd0;
+  background: #ffffff;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+}
+.iconBtn:hover {
+  background: #f1f0e8;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 22px;
+  align-items: start;
+  margin-top: 22px;
+}
+
+.cardTitle {
+  margin: 12px 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.reqWhat {
+  color: #5f5f54;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.complianceTitle {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.complianceRow {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+.complianceRow:last-child {
+  border-bottom: none;
+}
+
+.complianceLabel {
+  font-size: 13px;
+  flex: 1;
+  opacity: 0.9;
+}
+
+.contactKicker {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.7;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.contactName {
+  margin: 8px 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.contactDesc {
+  font-size: 13px;
+  opacity: 0.85;
+  margin: 0;
+}
+
+.contactInfo {
+  font-size: 13px;
+  margin-top: 12px;
+  opacity: 0.85;
+}
+
+/* Config modal */
+
+.modalHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.modalKind {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #5f5f54;
+}
+
+.modalName {
+  margin: 4px 0 0;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.modalClose {
+  border: none;
+  background: #f2f1e9;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.modalClose:hover {
+  background: #e7e5da;
+}
+
+.modalDesc {
+  font-size: 13px;
+  color: #5f5f54;
+  line-height: 1.5;
+  margin: 10px 0 20px;
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: #f2f1e9;
+  border-radius: 14px;
+  margin-bottom: 16px;
+}
+
+.toggleTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.toggleSub {
+  font-size: 12px;
+  color: #5f5f54;
+  margin-top: 2px;
+}
+
+.switchTrack {
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  cursor: pointer;
+  position: relative;
+  flex: none;
+  transition: background 0.15s;
+}
+
+.switchKnob {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  position: absolute;
+  top: 3px;
+  transition: left 0.15s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.modalLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5f5f54;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.endpointBox {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  background: #f2f1e9;
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  word-break: break-all;
+}
+
+.keyRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.keyBox {
+  flex: 1;
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  background: #f2f1e9;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.regenBtn {
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 12px;
+  padding: 0 16px;
+}
+.regenBtn:hover {
+  background: #f3f3ec;
+}
+
+.freqRow {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.freqChip {
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-top: 14px;
+  border-top: 1px solid #e7e7dc;
+}
+
+.modalSync {
+  font-size: 12px;
+  color: #6f6f62;
+}
+
+.modalFooterBtns {
+  display: flex;
+  gap: 10px;
+}
+
+.cancelBtn {
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 9px 18px;
+}
+.cancelBtn:hover {
+  background: #f3f3ec;
+}
+
+.saveBtn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 9px 20px;
+}
+.saveBtn:hover {
+  background: var(--ink-hover);
+}
+
+/* Deadline banner — mốc 31/12/2026 (NĐ 278/2025 Đ.24) */
+
+.deadlineBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 16px;
+  padding: 16px 22px;
+  margin-bottom: 22px;
+}
+
+.deadlineBannerTitle {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.deadlineBannerDesc {
+  font-size: 12px;
+  opacity: 0.75;
+  margin-top: 3px;
+}
+
+.deadlineBannerCount {
+  text-align: right;
+  flex: none;
+}
+
+.deadlineBannerCountNum {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.deadlineBannerCountLabel {
+  font-size: 11px;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+/* Mandatory-channel tag on connection rows */
+
+.mandatoryTag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #9a4a1f;
+  background: #ffd9c2;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+/* Share-requests table — action buttons + deadline chip */
+
+.reqActions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.reqActionBtn {
+  border: 1.5px solid #dcdcd0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  background: #ffffff;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+.reqActionBtn:hover {
+  background: #f3f3ec;
+}
+
+.reqActionBtnPrimary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #ffffff;
+}
+.reqActionBtnPrimary:hover {
+  background: var(--ink-hover);
+}
+
+.reqActionBtnDanger {
+  border-color: #f0b7a8;
+  color: #8a271a;
+}
+.reqActionBtnDanger:hover {
+  background: #fbe7e1;
+}
+
+.deadlineCell {
+  font-size: 13px;
+}
+
+.overdueChip {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #8a271a;
+  background: #f7cfc7;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* Dữ liệu mở & Cổng dữ liệu quốc gia card */
+
+.openDataDesc {
+  color: #5f5f54;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 8px 0 4px;
+}
+
+.openDataLegal {
+  color: #6f6f62;
+  font-size: 11px;
+  margin: 0 0 14px;
+}
+
+.openDataFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #e7e7dc;
+}
+
+.openDataBtn {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 8px 16px;
+  white-space: nowrap;
+}
+.openDataBtn:hover {
+  background: var(--ink-hover);
+}
+.openDataBtn:disabled {
+  cursor: default;
+  background: #dcdcd0;
+  color: #5f5f54;
+}
+
+/* Compliance summary + link (thay khối liệt kê NĐ 47/2020 cũ) */
+
+.complianceSummaryText {
+  font-size: 13px;
+  line-height: 1.55;
+  opacity: 0.9;
+  margin: 0 0 16px;
+}
+
+.complianceLinkBtn {
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  background: transparent;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+.complianceLinkBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Reason textarea (mandatory-channel disable confirm) */
+
+.formLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5f5f54;
+  display: block;
+  margin: 4px 0 6px;
+}
+
+.textArea {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: #f2f1e9;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: 14px;
+  min-height: 72px;
+  resize: vertical;
+}
